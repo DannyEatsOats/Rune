@@ -5,6 +5,8 @@ use tokio::sync::Mutex;
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
+use crate::ui::{self, *};
+
 /// A struct representing the modes the app can be in.
 #[derive(PartialEq, Eq)]
 pub enum AppMode {
@@ -38,10 +40,10 @@ impl App {
         let mut i = 0;
         // Should be "!app.exit"
         while  i < 2000 {
-            println!("ui update...{i}"); //Replace this with "terminal.draw(..)"
-            i+=1;
-
             // Later add the input blinker functionality here
+            terminal.draw(|f| ui(f, &mut app))?;
+
+            i+=1;
 
             if crossterm::event::poll(std::time::Duration::from_millis(50))? {
                 if let Event::Key(key) = crossterm::event::read()? {
