@@ -1,5 +1,6 @@
 use std::io;
 use std::sync::Arc;
+use devicons::Theme;
 use tokio::sync::Mutex;
 
 use crossterm::event::*;
@@ -20,15 +21,25 @@ pub enum AppMode {
 pub struct App {
     exit: bool,
     items: Arc<Mutex<Vec<String>>>,
+    mode: AppMode,
+    themes: Vec<theme::Theme>,
+    current_theme: usize,
 }
 
 impl App {
     /// Creates an instance of *App*
     pub fn new() -> Self {
-        Self {
+        let mut app = Self {
             exit: false,
             items: Arc::new(Mutex::new(Vec::new())),
-        }
+            mode: AppMode::Normal,
+            themes: Vec::new(),
+            current_theme: 0,
+        };
+
+        app.themes = theme::Theme::init_themes();
+
+        app
     }
 
     //Most code here will be changed, but it's a successful simulation, of what i want to do.
@@ -61,6 +72,13 @@ impl App {
 
     /// Handles a key related event from the user
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
+        if self.mode == AppMode::Normal && key_event.kind == KeyEventKind::Press {
+            self.handle_normal_mode(key_event);
+        } else if self.mode == AppMode::Search && key_event.kind == KeyEventKind::Press {
+            self.handle_search_mode(key_event);
+        }
+
+
         let mut i = 0;
         // I have to make the app ArcMutex in main and the clone it into the async task for later
         // use
@@ -74,5 +92,17 @@ impl App {
             }
         });
         Ok(())
+    }
+
+    pub fn handle_normal_mode(&mut self, key_event: KeyEvent) {
+
+    }
+
+    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {
+
+    }
+
+    pub fn get_theme(&self) -> &theme::Theme {
+        &self.themes[self.current_theme]
     }
 }
