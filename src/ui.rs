@@ -1,23 +1,43 @@
+use std::sync::Arc;
+
 use crate::app::*;
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span, Text},
     widgets::*,
-    Frame,
 };
+use tokio::sync::Mutex;
+use tokio::task;
 
 mod layout;
 pub mod theme;
 
 /// Draws the current ui. This is used in the app loop to update every frame
-pub fn ui(frame: &mut Frame, app: &mut App) {
+pub fn ui<'a>(frame: &mut Frame<'a>, app: &mut App) {
     let chunks = layout::main_layout(frame);
 
-    //GENERATE BACKGOUND
-    generate_background(app, frame);
+    //GENERATE BACKGOUND (atm i dont want a background cuz of hyprland)
+    //generate_background(app, frame);
 
-    //println!("ui update..."); //Replace this with "terminal.draw(..)"
+    generate_main_view(app, frame, chunks[1]);
+}
+
+/// Draws the main list of items in the directory. This is where you get the list view
+/// where you can move up, down and select different items to open.
+fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default());
+
+    let items = app.get_current_items();
+
+    println!("ui update ...");
+
+    for i in items.lock().unwrap().iter() {
+        //println!("{i:?}");
+    }
 }
 
 /// Generates the background for the current frame

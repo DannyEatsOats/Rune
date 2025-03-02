@@ -1,8 +1,7 @@
 use std::io;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use devicons::Theme;
-use tokio::sync::Mutex;
 
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
@@ -54,12 +53,9 @@ impl App {
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
-        let mut i = 0;
-        // Should be "!app.exit"
-        while  i < 2 {
+        while  !app.exit {
             // Later add the input blinker functionality here
             terminal.draw(|f| ui(f, &mut app))?;
-            i+=1;
 
             if crossterm::event::poll(std::time::Duration::from_millis(50))? {
                 if let Event::Key(key) = crossterm::event::read()? {
@@ -67,11 +63,9 @@ impl App {
                 }
             }
         }
+
+        //println!("{:?}", app.get_current_items().lock().unwrap());
         
-        let items = Arc::clone(&app.items);
-        tokio::spawn(async move {
-            println!("{items:?}");
-        });
         Ok(())
     }
 
@@ -90,8 +84,8 @@ impl App {
         let items = Arc::clone(&self.items);
         tokio::spawn(async move {
             while i < 1000 {
-                println!("Number: {i}");
-                //items.lock().await.push(format!("|{i}|"));
+                println!("{i}");
+                items.lock().unwrap().push(PathBuf::from("Path:{i}"));
                 i += 1;
                 tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
             }
@@ -100,11 +94,21 @@ impl App {
     }
 
     pub fn handle_normal_mode(&mut self, key_event: KeyEvent) {
-
+        match key_event.code {
+            KeyCode::Char('q') => {
+                self.exit = true;
+            },
+            _ => {}
+        }
     }
 
     pub fn handle_search_mode(&mut self, key_event: KeyEvent) {
 
+    }
+
+    pub fn get_current_items(&self) -> Arc<Mutex<Vec<PathBuf>>> {
+        Arc::clone(&self.items)
+        
     }
 
     pub fn get_theme(&self) -> &theme::Theme {
