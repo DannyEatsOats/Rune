@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::app::*;
+use devicons;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
@@ -32,12 +33,29 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
         .style(Style::default());
 
     let items = app.get_current_items();
+    //Maybe this could be somehow in a different function or stored as state
+    let mut list: Vec<Line> = Vec::new();
 
-    println!("ui update ...");
+    let items = items.lock().unwrap();
 
-    for i in items.lock().unwrap().iter() {
-        //println!("{i:?}");
-    }
+    items.iter().for_each(|i| {
+        let name = i.file_name().unwrap().to_string_lossy();
+        let icon = devicons::icon_for_file(i, &Some(devicons::Theme::Dark));
+        let line = Line::from(vec![Span::from(format!("{}", icon.icon)), Span::from(name)]);
+        list.push(Line::from(line));
+    });
+
+    let list = List::new(list)
+        .style(Style::default().fg(app.get_theme().get_fg()))
+        .highlight_style(Style::default().fg(app.get_theme().get_ht()))
+        .scroll_padding(1)
+        .block(block.clone())
+        .highlight_symbol(">> ");
+
+    //frame.render_widget(list.clone(), area);
+    frame.render_stateful_widget(list.clone(), area, app.get_ml_state());
+
+    drop(items);
 }
 
 /// Generates the background for the current frame

@@ -1,13 +1,14 @@
+use devicons::Theme;
 use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use devicons::Theme;
+use std::time::Duration;
 
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
-use crate::ui::{self, *};
 use crate::manager::*;
+use crate::ui::{self, *};
 
 /// A struct representing the modes the app can be in.
 #[derive(PartialEq, Eq)]
@@ -26,6 +27,7 @@ pub struct App {
     mode: AppMode,
     themes: Vec<theme::Theme>,
     current_theme: usize,
+    main_list_state: ListState,
 }
 
 impl App {
@@ -39,21 +41,22 @@ impl App {
             items: Arc::new(Mutex::new(items)),
             mode: AppMode::Normal,
             themes: Vec::new(),
-            current_theme: 0,
+            current_theme: 1,
+            main_list_state: ListState::default(),
         };
-
+        app.main_list_state.select(Some(0));
         app.themes = theme::Theme::init_themes();
 
         app
     }
 
     //Most code here will be changed, but it's a successful simulation, of what i want to do.
-    
+
     /// Start the app. this is the main loop where *ui updates* and
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
-        while  !app.exit {
+        while !app.exit {
             // Later add the input blinker functionality here
             terminal.draw(|f| ui(f, &mut app))?;
 
@@ -65,7 +68,7 @@ impl App {
         }
 
         //println!("{:?}", app.get_current_items().lock().unwrap());
-        
+
         Ok(())
     }
 
@@ -77,19 +80,6 @@ impl App {
             self.handle_search_mode(key_event);
         }
 
-
-        let mut i = 0;
-        // I have to make the app ArcMutex in main and the clone it into the async task for later
-        // use
-        let items = Arc::clone(&self.items);
-        tokio::spawn(async move {
-            while i < 1000 {
-                println!("{i}");
-                items.lock().unwrap().push(PathBuf::from("Path:{i}"));
-                i += 1;
-                tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-            }
-        });
         Ok(())
     }
 
@@ -97,21 +87,46 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => {
                 self.exit = true;
-            },
+            }
+            KeyCode::Down => {
+                if let Some(selected) = self.main_list_state.selected() {
+                    let next = (selected + 1).min(self.items.lock().unwrap().len());
+                    self.main_list_state.select(Some(next));
+                }
+            }
+            KeyCode::Up => {
+                if let Some(selected) = self.main_list_state.selected() {
+                    let prev = selected.saturating_sub(1);
+                    self.main_list_state.select(Some(prev));
+                }
+            }
+            KeyCode::Enter => {
+                let mut i = 0;
+                let items = Arc::clone(&self.items);
+                tokio::spawn(async move {
+                    while i < 1000 {
+                        //println!("{i}");
+                        items.lock().unwrap().push(PathBuf::from(format!("Path:{i}")));
+                        i += 1;
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
+                });
+            }
             _ => {}
         }
     }
 
-    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {
-
-    }
+    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {}
 
     pub fn get_current_items(&self) -> Arc<Mutex<Vec<PathBuf>>> {
         Arc::clone(&self.items)
-        
     }
 
     pub fn get_theme(&self) -> &theme::Theme {
         &self.themes[self.current_theme]
+    }
+
+    pub fn get_ml_state(&mut self) -> &mut ListState {
+        &mut self.main_list_state
     }
 }
