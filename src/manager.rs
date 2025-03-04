@@ -1,10 +1,14 @@
 use std::collections::{HashMap, HashSet};
+use std::io;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 pub struct Manager {
     root: PathBuf,
     homedir: PathBuf,
     current: PathBuf,
+    is_searching: Arc<Mutex<bool>>,
     pathstack: Vec<PathBuf>,
     index: HashMap<String, HashSet<PathBuf>>,
 }
@@ -18,11 +22,13 @@ impl Manager {
             root: PathBuf::from("/"),
             homedir: home.clone(),
             current: home.clone(),
+            is_searching: Arc::new(Mutex::new(false)),
             pathstack: Vec::new(),
             index: HashMap::new(),
         }
     }
 
+    /// Returns the directory currently opened in the manager
     pub fn get_current_dir(&self) -> std::io::Result<Vec<PathBuf>> {
         let mut items = Vec::new();
 
@@ -69,5 +75,38 @@ impl Manager {
         });
 
         Ok(items)
+    }
+
+    /// Starts the search process. First calling indexSearch() then fallbackSearch()
+    pub fn perform_search(&self, term: &str, items: Arc<Mutex<Vec<PathBuf>>>) -> io::Result<()> {
+        if term.is_empty() || term.contains("..") {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Invalid search term",
+            ));
+        }
+
+        let term = PathBuf::from(term);
+        let is_searching_arc = Arc::clone(&self.is_searching);
+
+        items.lock().unwrap().clear();
+
+        tokio::spawn(async move {
+            *is_searching_arc.lock().unwrap() = true;
+            for i in 0..=10 {
+                items
+                    .lock()
+                    .unwrap()
+                    .push(PathBuf::from(format!("{term:?}:{i}")));
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            *is_searching_arc.lock().unwrap() = false;
+        });
+
+        Ok(())
+    }
+
+    pub fn is_searching(&self) -> bool {
+        *self.is_searching.lock().unwrap()
     }
 }

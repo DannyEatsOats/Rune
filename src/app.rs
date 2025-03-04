@@ -59,6 +59,7 @@ impl App {
         while !app.exit {
             // Later add the input blinker functionality here
             terminal.draw(|f| ui(f, &mut app))?;
+            app.correct_ml_state();
 
             if crossterm::event::poll(std::time::Duration::from_millis(50))? {
                 if let Event::Key(key) = crossterm::event::read()? {
@@ -101,16 +102,10 @@ impl App {
                 }
             }
             KeyCode::Enter => {
-                let mut i = 0;
-                let items = Arc::clone(&self.items);
-                tokio::spawn(async move {
-                    while i < 1000 {
-                        //println!("{i}");
-                        items.lock().unwrap().push(PathBuf::from(format!("Path:{i}")));
-                        i += 1;
-                        tokio::time::sleep(Duration::from_secs(1)).await;
-                    }
-                });
+                if !self.manager.is_searching() {
+                    let items = Arc::clone(&self.items);
+                    self.manager.perform_search("fasz", items).unwrap();
+                }
             }
             _ => {}
         }
@@ -128,5 +123,11 @@ impl App {
 
     pub fn get_ml_state(&mut self) -> &mut ListState {
         &mut self.main_list_state
+    }
+
+    fn correct_ml_state(&mut self) {
+        if self.items.lock().unwrap().is_empty() {
+            self.main_list_state.select(Some(0));
+        }
     }
 }

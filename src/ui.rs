@@ -45,15 +45,19 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
         list.push(Line::from(line));
     });
 
-    let list = List::new(list)
-        .style(Style::default().fg(app.get_theme().get_fg()))
-        .highlight_style(Style::default().fg(app.get_theme().get_ht()))
-        .scroll_padding(1)
-        .block(block.clone())
-        .highlight_symbol(">> ");
+    if !items.is_empty() {
+        let list = List::new(list)
+            .style(Style::default().fg(app.get_theme().get_fg()))
+            .highlight_style(Style::default().fg(app.get_theme().get_ht()))
+            .scroll_padding(5)
+            .block(block.clone())
+            .highlight_symbol(">> ");
 
-    //frame.render_widget(list.clone(), area);
-    frame.render_stateful_widget(list.clone(), area, app.get_ml_state());
+        //frame.render_widget(list.clone(), area);
+        frame.render_stateful_widget(list.clone(), area, app.get_ml_state());
+    } else {
+        frame.render_widget(block, area);
+    }
 
     drop(items);
 }
