@@ -3,11 +3,7 @@ use std::sync::Arc;
 use crate::app::*;
 use devicons;
 use ratatui::{
-    Frame,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
-    text::{Line, Span, Text},
-    widgets::*,
+    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Style, Stylize}, text::{Line, Span, Text}, widgets::*, Frame
 };
 use tokio::sync::Mutex;
 use tokio::task;
@@ -30,7 +26,8 @@ pub fn ui<'a>(frame: &mut Frame<'a>, app: &mut App) {
 fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default());
+        .style(Style::default())
+        .fg(app.get_theme().get_fg());
 
     let items = app.get_current_items();
     //Maybe this could be somehow in a different function or stored as state
