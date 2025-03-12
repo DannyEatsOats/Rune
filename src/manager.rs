@@ -1,8 +1,12 @@
+use core::time;
 use std::collections::{HashMap, HashSet};
-use std::io;
+use std::error::Error;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
+use std::{fs, io};
+
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 pub struct Manager {
     root: PathBuf,
@@ -11,6 +15,7 @@ pub struct Manager {
     is_searching: Arc<Mutex<bool>>,
     pathstack: Vec<PathBuf>,
     index: HashMap<String, HashSet<PathBuf>>,
+    cache: HashMap<String, HashSet<PathBuf>>,
 }
 
 impl Manager {
@@ -25,6 +30,7 @@ impl Manager {
             is_searching: Arc::new(Mutex::new(false)),
             pathstack: Vec::new(),
             index: HashMap::new(),
+            cache: HashMap::new(),
         }
     }
 
@@ -77,8 +83,13 @@ impl Manager {
         Ok(items)
     }
 
-    /// Starts the search process. First calling indexSearch() then fallbackSearch()
-    pub fn perform_search(&self, term: &str, items: Arc<Mutex<Vec<PathBuf>>>) -> io::Result<()> {
+    /// Starts the search process. First calling cache_search(), index_search() then fallback_search()
+    pub fn perform_search(
+        &mut self,
+        term: &str,
+        items: Arc<Mutex<Vec<PathBuf>>>,
+    ) -> io::Result<()> {
+        let term = term.trim();
         if term.is_empty() || term.contains("..") {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -86,21 +97,71 @@ impl Manager {
             ));
         }
 
-        let term = PathBuf::from(term);
+        self.cache_search();
+
+        self.index_search(term, &items);
+
+        self.fallback_search(term, &items);
+
+        Ok(())
+    }
+
+    ///Searches the cache of the manager for previous searches in the session
+    fn cache_search(&self) {}
+
+    ///Searches the indexed files and directorioes of the manager
+    fn index_search(&mut self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
+        if let Some(res) = self.index.get(term) {
+            let mut items = items.lock().unwrap();
+
+            res.iter().for_each(|item| {
+                items.push(item.clone());
+            });
+            drop(items);
+        }
+    }
+
+    ///performs a recursive, multithreadded search traversing from the current direcoty
+    fn fallback_search(&self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
         let is_searching_arc = Arc::clone(&self.is_searching);
-
-        items.lock().unwrap().clear();
-
+        let items = Arc::clone(&items);
+        let term = term.to_string();
+        let path = self.current.clone();
         tokio::spawn(async move {
             *is_searching_arc.lock().unwrap() = true;
-            for i in 0..=10 {
-                items
-                    .lock()
-                    .unwrap()
-                    .push(PathBuf::from(format!("{term:?}:{i}")));
-                tokio::time::sleep(Duration::from_secs(1)).await;
-            }
+            Manager::fallback_recursion(&term, path, items, Instant::now()).unwrap();
             *is_searching_arc.lock().unwrap() = false;
+        });
+    }
+
+    fn fallback_recursion(
+        term: &str,
+        path: PathBuf,
+        items: Arc<Mutex<Vec<PathBuf>>>,
+        delta_time: Instant,
+    ) -> Result<(), Box<dyn Error>> {
+        if delta_time.elapsed() > Duration::from_secs(20) {
+            return Ok(());
+        }
+
+        if path.to_string_lossy().contains("/proc") {
+            return Ok(());
+        }
+
+        let content: Vec<_> = fs::read_dir(path)?.filter_map(Result::ok).collect();
+        content.par_iter().for_each(|item| {
+            let path = item.path();
+            if let Some(name) = path.file_name() {
+                let term = term.to_lowercase();
+                if name.to_string_lossy().to_lowercase().contains(&term) {
+                    items.lock().unwrap().push(path.clone());
+                    //BUILD PATH
+                }
+            }
+            if path.is_dir() {
+                let items = Arc::clone(&items);
+                Manager::fallback_recursion(term, path, items, delta_time).unwrap_or(());
+            }
         });
 
         Ok(())

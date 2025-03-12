@@ -1,14 +1,13 @@
-use devicons::Theme;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::manager::*;
-use crate::ui::{self, *};
+use crate::ui::*;
 
 /// A struct representing the modes the app can be in.
 #[derive(PartialEq, Eq)]
@@ -22,9 +21,9 @@ pub enum AppMode {
 /// A struct representing the App. It holds state and handles user events.
 pub struct App {
     exit: bool,
+    mode: AppMode,
     manager: Manager,
     items: Arc<Mutex<Vec<PathBuf>>>,
-    mode: AppMode,
     themes: Vec<theme::Theme>,
     current_theme: usize,
     main_list_state: ListState,
@@ -37,9 +36,9 @@ impl App {
         let items = fm.get_current_dir().unwrap();
         let mut app = Self {
             exit: false,
+            mode: AppMode::Normal,
             manager: fm,
             items: Arc::new(Mutex::new(items)),
-            mode: AppMode::Normal,
             themes: Vec::new(),
             current_theme: 1,
             main_list_state: ListState::default(),
