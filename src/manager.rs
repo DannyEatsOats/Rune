@@ -134,6 +134,7 @@ impl Manager {
         });
     }
 
+    ///Used as a helper function for fallback_search to implement recursion
     fn fallback_recursion(
         term: &str,
         path: PathBuf,
