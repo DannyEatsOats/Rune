@@ -47,6 +47,10 @@ impl Manager {
         }
     }
 
+    pub fn get_current_path(&self) -> &PathBuf {
+        &self.current
+    }
+
     /// Returns the directory currently opened in the manager
     pub fn get_current_dir(&self) -> std::io::Result<Vec<PathBuf>> {
         let mut items = Vec::new();
@@ -109,6 +113,10 @@ impl Manager {
                 "Invalid search term",
             ));
         }
+
+        //pathstack could maybe just store references
+        self.pathstack.push(self.current.clone());
+        items.lock().unwrap().clear();
 
         self.cache_search();
 

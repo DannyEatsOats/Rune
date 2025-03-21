@@ -109,6 +109,9 @@ impl App {
             KeyCode::Backspace | KeyCode::Char('h') => {
                 self.step_back();
             }
+            KeyCode::Char('?') => {
+                self.mode = AppMode::Search;
+            }
             _ => {}
         }
     }
@@ -119,7 +122,11 @@ impl App {
                 if !self.manager.is_searching() {
                     let items = Arc::clone(&self.items);
                     self.manager.perform_search("fasz", items).unwrap();
+                    self.mode = AppMode::Normal;
                 }
+            }
+            KeyCode::Esc => {
+                self.mode = AppMode::Normal;
             }
             _ => {}
         }
