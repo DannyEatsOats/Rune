@@ -1,4 +1,4 @@
-use core::time;
+use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::path::PathBuf;
@@ -7,6 +7,19 @@ use std::time::{Duration, Instant};
 use std::{fs, io};
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
+#[derive(Debug)]
+pub enum ManagerError {
+    InvalidPath,
+}
+
+impl Error for ManagerError {}
+
+impl fmt::Display for ManagerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
 
 pub struct Manager {
     root: PathBuf,
@@ -170,5 +183,27 @@ impl Manager {
 
     pub fn is_searching(&self) -> bool {
         *self.is_searching.lock().unwrap()
+    }
+
+    pub fn step_back(&mut self) -> Result<(), ManagerError> {
+        if let Some(prev) = self.pathstack.pop() {
+            self.current = prev;
+            return Ok(());
+        }
+        Err(ManagerError::InvalidPath)
+    }
+
+    pub fn change_dir(&mut self, new_path: PathBuf) -> Result<Vec<PathBuf>, ManagerError> {
+        if !new_path.exists() || !new_path.is_dir() {
+            return Err(ManagerError::InvalidPath);
+        }
+
+        self.pathstack.push(self.current.clone());
+        self.current = new_path;
+
+        //I'll have to handle this error here better later on
+        let items = self.get_current_dir().unwrap();
+
+        Ok(items)
     }
 }

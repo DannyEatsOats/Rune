@@ -88,18 +88,33 @@ impl App {
             KeyCode::Char('q') => {
                 self.exit = true;
             }
-            KeyCode::Down => {
+            KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.main_list_state.selected() {
                     let next = (selected + 1).min(self.items.lock().unwrap().len());
                     self.main_list_state.select(Some(next));
                 }
             }
-            KeyCode::Up => {
+            KeyCode::Up | KeyCode::Char('k') => {
                 if let Some(selected) = self.main_list_state.selected() {
                     let prev = selected.saturating_sub(1);
                     self.main_list_state.select(Some(prev));
                 }
             }
+            KeyCode::Enter | KeyCode::Char('l') => {
+                if let Some(selected) = self.main_list_state.selected() {
+                    let new_path = self.items.lock().unwrap().get(selected).unwrap().clone();
+                    self.change_dir(new_path);
+                }
+            }
+            KeyCode::Backspace | KeyCode::Char('h') => {
+                self.step_back();
+            }
+            _ => {}
+        }
+    }
+
+    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {
+        match key_event.code {
             KeyCode::Enter => {
                 if !self.manager.is_searching() {
                     let items = Arc::clone(&self.items);
@@ -109,8 +124,6 @@ impl App {
             _ => {}
         }
     }
-
-    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {}
 
     pub fn get_current_items(&self) -> Arc<Mutex<Vec<PathBuf>>> {
         Arc::clone(&self.items)
@@ -122,6 +135,19 @@ impl App {
 
     pub fn get_ml_state(&mut self) -> &mut ListState {
         &mut self.main_list_state
+    }
+
+    pub fn step_back(&mut self) {
+        //[[TODO]] I'll need better error handling here
+        if let Ok(_) = self.manager.step_back() {
+            self.items = Arc::new(Mutex::new(self.manager.get_current_dir().unwrap()));
+        }
+    }
+
+    pub fn change_dir(&mut self, new_path: PathBuf) {
+        if let Ok(items) = self.manager.change_dir(new_path.clone()) {
+            self.items = Arc::new(Mutex::new(items));
+        }
     }
 
     fn correct_ml_state(&mut self) {
