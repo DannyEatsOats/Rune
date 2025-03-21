@@ -3,7 +3,11 @@ use std::sync::Arc;
 use crate::app::*;
 use devicons;
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Style, Stylize}, text::{Line, Span, Text}, widgets::*, Frame
+    Frame,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style, Stylize},
+    text::{Line, Span, Text},
+    widgets::*,
 };
 use tokio::sync::Mutex;
 use tokio::task;
@@ -26,8 +30,8 @@ pub fn ui<'a>(frame: &mut Frame<'a>, app: &mut App) {
 fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .style(Style::default())
-        .fg(app.get_theme().get_fg());
+        .style(Style::default().fg(app.get_theme().get_fg()));
+    //.fg(app.get_theme().get_fg());
 
     let items = app.get_current_items();
     //Maybe this could be somehow in a different function or stored as state
@@ -38,7 +42,13 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
     items.iter().for_each(|i| {
         let name = i.file_name().unwrap().to_string_lossy();
         let icon = devicons::icon_for_file(i, &Some(devicons::Theme::Dark));
-        let line = Line::from(vec![Span::from(format!("{}", icon.icon)), Span::from(name)]);
+        let line = Line::from(vec![
+            Span::styled(
+                format!("{} ", icon.icon),
+                Style::default().fg(Color::Rgb(200, 200, 200)),
+            ),
+            Span::from(name),
+        ]);
         list.push(Line::from(line));
     });
 
