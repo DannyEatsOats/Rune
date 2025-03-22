@@ -42,11 +42,17 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
     items.iter().for_each(|i| {
         let name = i.file_name().unwrap().to_string_lossy();
         let icon = devicons::icon_for_file(i, &Some(devicons::Theme::Dark));
+
+        let rgb = hex::decode(icon.color.trim_matches('#'));
+        let color = if i.is_dir() || !rgb.is_ok() {
+            app.get_theme().get_fg()
+        } else {
+            let rgb = rgb.unwrap();
+            Color::Rgb(rgb[0], rgb[1], rgb[2])
+        };
+
         let line = Line::from(vec![
-            Span::styled(
-                format!("{} ", icon.icon),
-                Style::default().fg(Color::Rgb(200, 200, 200)),
-            ),
+            Span::styled(format!("{} ", icon.icon), Style::default().fg(color)),
             Span::from(name),
         ]);
         list.push(Line::from(line));
