@@ -136,6 +136,10 @@ impl App {
         Arc::clone(&self.items)
     }
 
+    pub fn get_current_path(&self) -> &PathBuf {
+        &self.manager.get_current_path()
+    }
+
     pub fn get_theme(&self) -> &theme::Theme {
         &self.themes[self.current_theme]
     }
