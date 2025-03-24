@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -121,7 +120,9 @@ impl App {
             KeyCode::Enter => {
                 if !self.manager.is_searching() {
                     let items = Arc::clone(&self.items);
-                    self.manager.perform_search("fasz", items).unwrap();
+                    self.manager
+                        .perform_search("fasz", items, self.main_list_state.selected().unwrap_or(0))
+                        .unwrap();
                     self.mode = AppMode::Normal;
                 }
             }
@@ -150,13 +151,22 @@ impl App {
 
     pub fn step_back(&mut self) {
         //[[TODO]] I'll need better error handling here
-        if let Ok(_) = self.manager.step_back() {
+        if let Ok(cursor_idx) = self.manager.step_back() {
             self.items = Arc::new(Mutex::new(self.manager.get_current_dir().unwrap()));
+            let cursor_idx = if cursor_idx >= self.items.lock().unwrap().len() {
+                0
+            } else {
+                cursor_idx
+            };
+            self.main_list_state.select(Some(cursor_idx));
         }
     }
 
     pub fn change_dir(&mut self, new_path: PathBuf) {
-        if let Ok(items) = self.manager.change_dir(new_path.clone()) {
+        if let Ok(items) = self.manager.change_dir(
+            new_path.clone(),
+            self.main_list_state.selected().unwrap_or(0),
+        ) {
             self.items = Arc::new(Mutex::new(items));
         }
     }

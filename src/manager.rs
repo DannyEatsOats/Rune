@@ -26,7 +26,7 @@ pub struct Manager {
     homedir: PathBuf,
     current: PathBuf,
     is_searching: Arc<Mutex<bool>>,
-    pathstack: Vec<PathBuf>,
+    pathstack: Vec<(PathBuf, usize)>,
     index: HashMap<String, HashSet<PathBuf>>,
     cache: HashMap<String, HashSet<PathBuf>>,
 }
@@ -105,6 +105,7 @@ impl Manager {
         &mut self,
         term: &str,
         items: Arc<Mutex<Vec<PathBuf>>>,
+        cursor_idx: usize,
     ) -> io::Result<()> {
         let term = term.trim();
         if term.is_empty() || term.contains("..") {
@@ -115,7 +116,7 @@ impl Manager {
         }
 
         //pathstack could maybe just store references
-        self.pathstack.push(self.current.clone());
+        self.pathstack.push((self.current.clone(), cursor_idx));
         items.lock().unwrap().clear();
 
         self.cache_search();
@@ -193,20 +194,24 @@ impl Manager {
         *self.is_searching.lock().unwrap()
     }
 
-    pub fn step_back(&mut self) -> Result<(), ManagerError> {
-        if let Some(prev) = self.pathstack.pop() {
+    pub fn step_back(&mut self) -> Result<usize, ManagerError> {
+        if let Some((prev, cursor_idx)) = self.pathstack.pop() {
             self.current = prev;
-            return Ok(());
+            return Ok(cursor_idx);
         }
         Err(ManagerError::InvalidPath)
     }
 
-    pub fn change_dir(&mut self, new_path: PathBuf) -> Result<Vec<PathBuf>, ManagerError> {
+    pub fn change_dir(
+        &mut self,
+        new_path: PathBuf,
+        cursor_idx: usize,
+    ) -> Result<Vec<PathBuf>, ManagerError> {
         if !new_path.exists() || !new_path.is_dir() {
             return Err(ManagerError::InvalidPath);
         }
 
-        self.pathstack.push(self.current.clone());
+        self.pathstack.push((self.current.clone(), cursor_idx));
         self.current = new_path;
 
         //I'll have to handle this error here better later on
