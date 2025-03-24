@@ -101,6 +101,9 @@ impl App {
             }
             KeyCode::Enter | KeyCode::Char('l') => {
                 if let Some(selected) = self.main_list_state.selected() {
+                    if self.items.lock().unwrap().get(selected).is_none() {
+                        return;
+                    }
                     let new_path = self.items.lock().unwrap().get(selected).unwrap().clone();
                     self.change_dir(new_path);
                 }
