@@ -14,11 +14,12 @@ pub mod theme;
 /// Draws the current ui. This is used in the app loop to update every frame
 pub fn ui<'a>(frame: &mut Frame<'a>, app: &mut App) {
     let chunks = layout::main_layout(frame);
-
+    let vchunks = layout::header_layout(frame);
     //GENERATE BACKGOUND (atm i dont want a background cuz of hyprland)
     //generate_background(app, frame);
 
     generate_main_view(app, frame, chunks[1]);
+    generate_searchbar(app, frame, vchunks[0]);
 }
 
 /// Draws the main list of items in the directory. This is where you get the list view
@@ -70,6 +71,16 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
     }
 
     drop(items);
+}
+
+pub fn generate_searchbar(app: &mut App, frame: &mut Frame, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(String::from("Search"))
+        .style(Style::default().fg(app.get_theme().get_fg()))
+        .fg(app.get_theme().get_fg());
+
+    frame.render_widget(block, area);
 }
 
 /// Generates the background for the current frame
