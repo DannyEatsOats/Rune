@@ -6,6 +6,7 @@ use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::manager::*;
+use crate::ui::input::Input;
 use crate::ui::*;
 
 /// A struct representing the modes the app can be in.
@@ -26,6 +27,7 @@ pub struct App {
     themes: Vec<theme::Theme>,
     current_theme: usize,
     main_list_state: ListState,
+    pub search_input: input::Input,
 }
 
 impl App {
@@ -41,9 +43,11 @@ impl App {
             themes: Vec::new(),
             current_theme: 1,
             main_list_state: ListState::default(),
+            search_input: input::Input::new(),
         };
         app.main_list_state.select(Some(0));
         app.themes = theme::Theme::init_themes();
+        app.search_input.set_color(app.get_theme().get_fg());
 
         app
     }
@@ -131,6 +135,13 @@ impl App {
             }
             KeyCode::Esc => {
                 self.mode = AppMode::Normal;
+            }
+            KeyCode::Backspace => match key_event.modifiers {
+                KeyModifiers::CONTROL => self.search_input.handle(input::InputType::DeletePrevWord),
+                _ => self.search_input.handle(input::InputType::DeleteChar),
+            },
+            KeyCode::Char(c) => {
+                self.search_input.handle(input::InputType::AppendChar(c));
             }
             _ => {}
         }

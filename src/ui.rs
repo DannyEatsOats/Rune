@@ -8,6 +8,7 @@ use ratatui::{
     widgets::*,
 };
 
+pub mod input;
 mod layout;
 pub mod theme;
 
@@ -80,7 +81,10 @@ pub fn generate_searchbar(app: &mut App, frame: &mut Frame, area: Rect) {
         .style(Style::default().fg(app.get_theme().get_fg()))
         .fg(app.get_theme().get_fg());
 
-    frame.render_widget(block, area);
+    let input = Text::from(app.search_input.get_value().clone());
+    let input = Paragraph::new(input).block(block);
+
+    frame.render_widget(input, area);
 }
 
 /// Generates the background for the current frame
