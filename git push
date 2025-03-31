@@ -1,0 +1,107 @@
+[33mcommit 548098d001d624155c3d08ab6faa8bc69e6713eb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Thu Mar 27 22:23:31 2025 +0100
+
+    started searchbar
+
+[33mcommit ce02676d076bd293f9f4a296b408efcdeff6a16c[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Mon Mar 24 20:37:21 2025 +0100
+
+    fiy
+
+[33mcommit 09913d6c29745c026515705734177e9eb17cc8c3[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Mon Mar 24 19:55:35 2025 +0100
+
+    pushes previous cursor idx to pathstack
+
+[33mcommit efe5c98455582a19da15364383010c99a9aaef90[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 22 23:15:52 2025 +0100
+
+    Dir display
+
+[33mcommit 8811e1e6c67fa27f1bac4e26375ad16337fcae58[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 22 22:57:51 2025 +0100
+
+    Added color to icons
+
+[33mcommit 670ee7eba6f4b65c106756203d2a9c084c894986[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Fri Mar 21 23:09:10 2025 +0100
+
+    working on ui
+
+[33mcommit a262b1e76f68ae323254fd7c4773f033e7881809[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Fri Mar 21 22:46:50 2025 +0100
+
+    Change between normal and search state
+
+[33mcommit e4844d5a5bed6ef2be71af56c2a17a90b0031461[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Fri Mar 21 22:26:59 2025 +0100
+
+    Added change_dir and step_back for nav
+
+[33mcommit 443aabdf7905f2ebcb146cb5766097081de3dd85[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Wed Mar 19 21:42:27 2025 +0100
+
+    fix
+
+[33mcommit f0ca706c3471428dfe41bb78c90bd94c492bed38[m[33m ([m[1;32msearch-functionality[m[33m)[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Wed Mar 12 20:59:55 2025 +0100
+
+    Async Fallback search is goingg
+
+[33mcommit da392238f7b928f83c255cee48a4607be304b411[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Wed Mar 5 07:56:52 2025 +0100
+
+    fix
+
+[33mcommit b4d689a8fd81dc58bf4cbf84e47c822aa678bc2c[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Tue Mar 4 21:09:11 2025 +0100
+
+    On search generates list in palce without breaking ui
+
+[33mcommit ce9121bbafb1f5b8e860784b934134f9d4b88759[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sun Mar 2 20:36:34 2025 +0100
+
+    UI and event updates, while items generate in async
+
+[33mcommit 417e4d3124491a89ac81d3688cef6165d409649a[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sun Mar 2 18:47:10 2025 +0100
+
+    Figuring out async stuff
+
+[33mcommit eac32fcf9c1269403e89deb065a214d79c0cfa74[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 1 11:34:49 2025 +0100
+
+    Started migrating file manager
+
+[33mcommit 9f3c284b4110d487dfc2bd3308c225e7f3234cad[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 1 10:37:16 2025 +0100
+
+    More UI
+
+[33mcommit d77a6033e219b7584f2f97222f158f43d6803229[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 1 09:27:31 2025 +0100
+
+    Working on UI
+
+[33mcommit 717b012e17249d608f70c35613e6496bbf16a174[m
+Author: DannyW <dannyeatsoats29@gmail.com>
+Date:   Sat Mar 1 09:01:09 2025 +0100
+
+    Initial commit

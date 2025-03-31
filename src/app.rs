@@ -6,7 +6,6 @@ use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::manager::*;
-use crate::ui::input::Input;
 use crate::ui::*;
 
 /// A struct representing the modes the app can be in.
@@ -65,7 +64,7 @@ impl App {
 
             if crossterm::event::poll(std::time::Duration::from_millis(50))? {
                 if let Event::Key(key) = crossterm::event::read()? {
-                    app.handle_key_event(key)?;
+                    app.handle_key_event(&key)?;
                 }
             }
         }
@@ -76,9 +75,9 @@ impl App {
     }
 
     /// Handles a key related event from the user
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
+    pub fn handle_key_event(&mut self, key_event: &KeyEvent) -> io::Result<()> {
         if self.mode == AppMode::Normal && key_event.kind == KeyEventKind::Press {
-            self.handle_normal_mode(key_event);
+            self.handle_normal_mode(&key_event);
         } else if self.mode == AppMode::Search && key_event.kind == KeyEventKind::Press {
             self.handle_search_mode(key_event);
         }
@@ -86,7 +85,8 @@ impl App {
         Ok(())
     }
 
-    pub fn handle_normal_mode(&mut self, key_event: KeyEvent) {
+    /// Handles normal mode keyevents, modifiers
+    pub fn handle_normal_mode(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => {
                 self.exit = true;
@@ -122,13 +122,27 @@ impl App {
         }
     }
 
-    pub fn handle_search_mode(&mut self, key_event: KeyEvent) {
+    /// Handles search mode keyevents, modifiers
+    fn handle_search_mode(&mut self, key_event: &KeyEvent) {
+        match key_event.modifiers {
+            KeyModifiers::CONTROL => {
+                if let KeyCode::Char('h') = key_event.code {
+                    self.search_input.handle(input::InputType::DeletePrevWord);
+                }
+            }
+            _ => self.handle_skey_code(key_event),
+        }
+    }
+
+    /// Handles search mode keycodes (regular keys without modifiers)
+    fn handle_skey_code(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Enter => {
                 if !self.manager.is_searching() {
                     let items = Arc::clone(&self.items);
+                    let term = self.search_input.get_value();
                     self.manager
-                        .perform_search("fasz", items, self.main_list_state.selected().unwrap_or(0))
+                        .perform_search(term, items, self.main_list_state.selected().unwrap_or(0))
                         .unwrap();
                     self.mode = AppMode::Normal;
                 }
@@ -136,10 +150,7 @@ impl App {
             KeyCode::Esc => {
                 self.mode = AppMode::Normal;
             }
-            KeyCode::Backspace => match key_event.modifiers {
-                KeyModifiers::CONTROL => self.search_input.handle(input::InputType::DeletePrevWord),
-                _ => self.search_input.handle(input::InputType::DeleteChar),
-            },
+            KeyCode::Backspace => self.search_input.handle(input::InputType::DeleteChar),
             KeyCode::Char(c) => {
                 self.search_input.handle(input::InputType::AppendChar(c));
             }
@@ -161,6 +172,10 @@ impl App {
 
     pub fn get_ml_state(&mut self) -> &mut ListState {
         &mut self.main_list_state
+    }
+
+    pub fn get_mode(&self) -> &AppMode {
+        &self.mode
     }
 
     pub fn step_back(&mut self) {

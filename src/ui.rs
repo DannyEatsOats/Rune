@@ -77,11 +77,16 @@ fn generate_main_view(app: &mut App, frame: &mut Frame, area: Rect) {
 pub fn generate_searchbar(app: &mut App, frame: &mut Frame, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
-        .title(String::from("Search"))
+        .title(String::from(" Search "))
         .style(Style::default().fg(app.get_theme().get_fg()))
         .fg(app.get_theme().get_fg());
 
-    let input = Text::from(app.search_input.get_value().clone());
+    let val = if app.get_mode().eq(&AppMode::Search) {
+        app.search_input.get_value().clone() + "|"
+    } else {
+        app.search_input.get_value().clone()
+    };
+    let input = Text::from(val);
     let input = Paragraph::new(input).block(block);
 
     frame.render_widget(input, area);

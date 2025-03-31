@@ -1,5 +1,4 @@
 use ratatui::style::Color;
-use serde::de::value;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InputType {
@@ -55,9 +54,12 @@ impl Input {
     }
 
     fn dprev_word(&mut self) {
-        print!("fasz");
-        while !self.value.is_empty() || self.value.bytes().last().unwrap() != b' ' {
+        while !self.value.is_empty() {
+            let last_char = self.value.bytes().last().unwrap();
             self.value.pop();
+            if last_char == b' ' {
+                break;
+            }
         }
     }
 }
