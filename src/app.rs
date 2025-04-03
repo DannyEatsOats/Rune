@@ -57,9 +57,10 @@ impl App {
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
+        let mut ui = UI::new(&app);
         while !app.exit {
             // Later add the input blinker functionality here
-            terminal.draw(|f| ui(f, &mut app))?;
+            terminal.draw(|f| ui.draw(f, &mut app))?;
             app.correct_ml_state();
 
             if crossterm::event::poll(std::time::Duration::from_millis(50))? {
