@@ -8,6 +8,8 @@ use std::{fs, io};
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
+use crate::ui::UI;
+
 #[derive(Debug)]
 pub enum ManagerError {
     InvalidPath,
@@ -168,6 +170,10 @@ impl Manager {
         }
 
         if path.to_string_lossy().contains("/proc") {
+            return Ok(());
+        }
+
+        if items.lock().unwrap().len() > 2000 {
             return Ok(());
         }
 
