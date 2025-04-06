@@ -1,9 +1,9 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
-    Frame,
 };
 
 fn main_vertical_layot(frame: &mut Frame) -> std::rc::Rc<[ratatui::layout::Rect]> {
@@ -36,6 +36,14 @@ pub fn header_layout(frame: &mut Frame) -> std::rc::Rc<[ratatui::layout::Rect]> 
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(100)])
         .split(vertical_chunks[0])
+}
+
+pub fn footer_layout(frame: &mut Frame) -> std::rc::Rc<[ratatui::layout::Rect]> {
+    let vertical_chunks = main_vertical_layot(frame);
+    Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(100)])
+        .split(vertical_chunks[2])
 }
 
 pub fn view_layout(frame: &mut Frame) -> std::rc::Rc<[ratatui::layout::Rect]> {

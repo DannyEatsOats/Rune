@@ -1,7 +1,7 @@
 use tokio;
 
-use std::io;
 use gooner::app::*;
+use std::io;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {

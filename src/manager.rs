@@ -173,6 +173,7 @@ impl Manager {
             return Ok(());
         }
 
+        // Temporary fix, for huge searches
         if items.lock().unwrap().len() > 2000 {
             return Ok(());
         }

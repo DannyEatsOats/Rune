@@ -41,13 +41,15 @@ impl<'a> UI<'a> {
     /// Draws the current ui. This is used in the app loop to update every frame
     pub fn draw<'b>(&mut self, frame: &mut Frame<'b>, app_props: &mut AppProperties) {
         let chunks = layout::main_layout(frame);
-        let vchunks = layout::header_layout(frame);
+        let header = layout::header_layout(frame);
+        let footer = layout::footer_layout(frame);
 
         //GENERATE BACKGOUND (atm i dont want a background cuz of hyprland)
         //generate_background(app, frame);
 
+        self.generate_statusbar(app_props, frame, footer[0]);
         self.generate_main_view(app_props, frame, chunks[1]);
-        self.generate_searchbar(app_props, frame, vchunks[0]);
+        self.generate_searchbar(app_props, frame, header[0]);
     }
 
     /// Sets the items for the main screen, called by app when changing directories
@@ -123,10 +125,13 @@ impl<'a> UI<'a> {
                 .block(block.clone())
                 .highlight_symbol(">> ");
 
-            //frame.render_widget(list.clone(), area);
             frame.render_stateful_widget(list.clone(), area, app_props.get_ml_state());
         } else {
-            frame.render_widget(block, area);
+            let empty_text = Paragraph::new("Directory Empty :(")
+                .style(Style::default().fg(app_props.get_theme().get_pr()))
+                .centered()
+                .block(block);
+            frame.render_widget(empty_text, area);
         }
     }
 
@@ -158,5 +163,20 @@ impl<'a> UI<'a> {
         let background =
             Block::default().style(Style::default().bg(app_props.get_theme().get_bg()));
         frame.render_widget(background, frame.area());
+    }
+
+    fn generate_statusbar(&self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .fg(app_props.get_theme().get_fg());
+
+        let app_mode = Paragraph::new(app_props.mode.to_string())
+            .style(Style::default().fg(app_props.get_theme().get_mt()))
+            .block(block);
+
+        // Add directory and/or file properties here
+
+        frame.render_widget(app_mode, area);
     }
 }

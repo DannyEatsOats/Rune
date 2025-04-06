@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -17,6 +18,17 @@ pub enum AppMode {
     Edit,
     Search,
     Compare,
+}
+
+impl Display for AppMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppMode::Normal => write!(f, "Normal"),
+            AppMode::Edit => write!(f, "Edit"),
+            AppMode::Search => write!(f, "Search"),
+            AppMode::Compare => write!(f, "Compare"),
+        }
+    }
 }
 
 pub struct AppProperties {
