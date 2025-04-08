@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     app::*,
@@ -49,6 +52,7 @@ impl<'a> UI<'a> {
 
         self.generate_statusbar(app_props, frame, footer[0]);
         self.generate_main_view(app_props, frame, chunks[1]);
+        self.generate_preview(app_props, frame, chunks[2]);
         self.generate_searchbar(app_props, frame, header[0]);
     }
 
@@ -156,6 +160,33 @@ impl<'a> UI<'a> {
         let input = Paragraph::new(input).block(block);
 
         frame.render_widget(input, area);
+    }
+
+    fn generate_preview(&mut self, app_props: &mut AppProperties, frame: &mut Frame, area: Rect) {
+        let idx = app_props.get_ml_state().selected().unwrap_or(0);
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(format!(" Preview ",))
+            .title_alignment(ratatui::layout::Alignment::Center)
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .fg(app_props.get_theme().get_fg());
+
+        if !self.list.as_ref().unwrap().is_empty() {
+            let list = List::new(self.list.clone().unwrap())
+                .style(Style::default().fg(app_props.get_theme().get_fg()))
+                .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
+                .scroll_padding(5)
+                .block(block.clone())
+                .highlight_symbol(">> ");
+
+            frame.render_stateful_widget(list.clone(), area, app_props.get_ml_state());
+        } else {
+            let empty_text = Paragraph::new("Directory Empty :(")
+                .style(Style::default().fg(app_props.get_theme().get_pr()))
+                .centered()
+                .block(block);
+            frame.render_widget(empty_text, area);
+        }
     }
 
     /// Generates the background for the current frame

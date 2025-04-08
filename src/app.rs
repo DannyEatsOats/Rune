@@ -66,12 +66,16 @@ impl<'a> App<'a> {
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let next = (selected + 1).min(self.properties.items.lock().unwrap().len());
+                    self.properties.cursor =
+                        self.properties.items.lock().unwrap().get(next).cloned();
                     self.properties.main_list_state.select(Some(next));
                 }
             }
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let prev = selected.saturating_sub(1);
+                    self.properties.cursor =
+                        self.properties.items.lock().unwrap().get(prev).cloned();
                     self.properties.main_list_state.select(Some(prev));
                 }
             }

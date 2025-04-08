@@ -40,6 +40,7 @@ pub struct AppProperties {
     pub current_theme: usize,
     pub main_list_state: ListState,
     pub search_input: input::Input,
+    pub cursor: Option<PathBuf>,
 }
 
 impl AppProperties {
@@ -55,6 +56,7 @@ impl AppProperties {
             current_theme: 1,
             main_list_state: ListState::default(),
             search_input: input::Input::new(),
+            cursor: None,
         };
         props.main_list_state.select(Some(0));
         props.themes = theme::Theme::init_themes();
