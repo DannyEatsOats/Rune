@@ -55,10 +55,10 @@ impl Manager {
     }
 
     /// Returns the directory currently opened in the manager
-    pub fn get_current_dir(&self) -> std::io::Result<Vec<PathBuf>> {
+    pub fn read_dir(&self, path: &PathBuf) -> std::io::Result<Vec<PathBuf>> {
         let mut items = Vec::new();
 
-        for entry in std::fs::read_dir(&self.current)? {
+        for entry in std::fs::read_dir(&path)? {
             let entry = entry?;
             let path = entry.path();
 
@@ -248,7 +248,7 @@ impl Manager {
         self.current = new_path;
 
         //I'll have to handle this error here better later on
-        let items = self.get_current_dir().unwrap();
+        let items = self.read_dir(&self.current).unwrap();
 
         Ok(items)
     }

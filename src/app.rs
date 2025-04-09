@@ -164,7 +164,10 @@ impl<'a> App<'a> {
         //[[TODO]] I'll need better error handling here
         if let Ok(cursor_idx) = self.properties.manager.step_back() {
             self.properties.items = Arc::new(Mutex::new(
-                self.properties.manager.get_current_dir().unwrap(),
+                self.properties
+                    .manager
+                    .read_dir(self.properties.get_current_path())
+                    .unwrap(),
             ));
             let cursor_idx = if cursor_idx >= self.properties.items.lock().unwrap().len() {
                 0

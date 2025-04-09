@@ -46,7 +46,7 @@ pub struct AppProperties {
 impl AppProperties {
     pub fn new() -> Self {
         let fm = Manager::new();
-        let items = fm.get_current_dir().unwrap();
+        let items = fm.read_dir(fm.get_current_path()).unwrap();
         let mut cursor = None;
         if let Some(path) = items.first() {
             cursor = Some(path.clone());
