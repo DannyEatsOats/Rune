@@ -1,6 +1,7 @@
 use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::io::BufRead;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -100,6 +101,31 @@ impl Manager {
         });
 
         Ok(items)
+    }
+
+    pub fn read_file(&self, path: &PathBuf) -> io::Result<String> {
+        let file = fs::File::open(path)?;
+        let reader = io::BufReader::new(file);
+        let mut reader = reader.lines();
+        let mut content = String::new();
+
+        if !path.is_file() {
+            return Err(io::ErrorKind::IsADirectory.into());
+        }
+
+        for i in 0..100 {
+            let line = reader.next();
+            if let Some(line) = line {
+                if let Ok(line) = line {
+                    content.push_str(&line);
+                    content.push_str("\n");
+                }
+            } else {
+                return Ok(content);
+            }
+        }
+
+        Ok(content)
     }
 
     /// Starts the search process. First calling cache_search(), index_search() then fallback_search()

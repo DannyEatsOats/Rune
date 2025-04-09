@@ -47,6 +47,10 @@ impl AppProperties {
     pub fn new() -> Self {
         let fm = Manager::new();
         let items = fm.get_current_dir().unwrap();
+        let mut cursor = None;
+        if let Some(path) = items.first() {
+            cursor = Some(path.clone());
+        }
         let mut props = Self {
             exit: false,
             mode: AppMode::Normal,
@@ -56,7 +60,7 @@ impl AppProperties {
             current_theme: 1,
             main_list_state: ListState::default(),
             search_input: input::Input::new(),
-            cursor: None,
+            cursor,
         };
         props.main_list_state.select(Some(0));
         props.themes = theme::Theme::init_themes();

@@ -15,6 +15,7 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::*,
 };
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 pub mod input;
 mod layout;
@@ -171,6 +172,23 @@ impl<'a> UI<'a> {
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
 
+        let file_content = app_props
+            .manager
+            .read_file(app_props.cursor.as_ref().unwrap());
+
+        if let Ok(file_content) = file_content {
+            let paragraph = Paragraph::new(file_content)
+                .style(Style::default())
+                .fg(app_props.get_theme().get_fg())
+                .alignment(ratatui::layout::Alignment::Left)
+                .wrap(Wrap { trim: true })
+                .block(block);
+            frame.render_widget(paragraph, area);
+        } else {
+            frame.render_widget(block, area);
+        }
+
+        /*
         if !self.list.as_ref().unwrap().is_empty() {
             let list = List::new(self.list.clone().unwrap())
                 .style(Style::default().fg(app_props.get_theme().get_fg()))
@@ -187,6 +205,7 @@ impl<'a> UI<'a> {
                 .block(block);
             frame.render_widget(empty_text, area);
         }
+        */
     }
 
     /// Generates the background for the current frame
