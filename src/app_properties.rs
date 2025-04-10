@@ -1,5 +1,6 @@
 use std::{
     fmt::Display,
+    fs::Metadata,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
@@ -40,16 +41,20 @@ pub struct AppProperties {
     pub current_theme: usize,
     pub main_list_state: ListState,
     pub search_input: input::Input,
-    pub cursor: Option<PathBuf>,
+    pub cursor: (Option<PathBuf>, Option<Metadata>),
 }
 
 impl AppProperties {
     pub fn new() -> Self {
         let fm = Manager::new();
         let items = fm.read_dir(fm.get_current_path()).unwrap();
-        let mut cursor = None;
+        let mut cursor = (None, None);
         if let Some(path) = items.first() {
-            cursor = Some(path.clone());
+            let mut metadata: Option<Metadata> = None;
+            if let Ok(md) = path.metadata() {
+                metadata = Some(md);
+            }
+            cursor = (Some(path.clone()), metadata);
         }
         let mut props = Self {
             exit: false,

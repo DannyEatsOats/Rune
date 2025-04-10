@@ -172,14 +172,20 @@ impl<'a> UI<'a> {
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
 
-        if let None = &app_props.cursor {
+        if let (None, _) = &app_props.cursor {
+            let empty_text = Paragraph::new("Directory Empty :(")
+                .style(Style::default().fg(app_props.get_theme().get_pr()))
+                .centered()
+                .block(block);
+            frame.render_widget(empty_text, area);
             return;
         }
-        let cursor = app_props.cursor.as_ref().unwrap();
+        let (path, metadata) = &app_props.cursor;
+        let path = path.as_ref().unwrap();
 
         // This draws every frame, gotta fix that
-        if cursor.is_file() {
-            let file_content = app_props.manager.read_file(cursor);
+        if path.is_file() {
+            let file_content = app_props.manager.read_file(&path);
 
             if let Ok(file_content) = file_content {
                 let paragraph = Paragraph::new(file_content)
@@ -190,10 +196,19 @@ impl<'a> UI<'a> {
                     .block(block);
                 frame.render_widget(paragraph, area);
             }
-        } else if cursor.is_dir() {
+        } else if path.is_dir() {
             //This could be added to another function so it can be reused
-            let directory = app_props.manager.read_dir(cursor);
+            let directory = app_props.manager.read_dir(&path);
             if let Ok(directory) = directory {
+                if directory.is_empty() {
+                    // Refactor this later, cuz 'empty text' gets generated too manny times.
+                    let empty_text = Paragraph::new("Directory Empty :(")
+                        .style(Style::default().fg(app_props.get_theme().get_pr()))
+                        .centered()
+                        .block(block);
+                    frame.render_widget(empty_text, area);
+                    return;
+                }
                 let mut list: Vec<Line> = Vec::new();
                 directory.iter().for_each(|i| {
                     let name = i.file_name().unwrap().to_string_lossy().into_owned();
@@ -221,27 +236,13 @@ impl<'a> UI<'a> {
                     .highlight_symbol(">> ");
                 frame.render_widget(list, area);
             }
-            /*
-                        if !self.list.as_ref().unwrap().is_empty() {
-                            let list = List::new(self.list.clone().unwrap())
-                                .style(Style::default().fg(app_props.get_theme().get_fg()))
-                                .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
-                                .scroll_padding(5)
-                                .block(block.clone())
-                                .highlight_symbol(">> ");
-
-                            frame.render_stateful_widget(list.clone(), area, app_props.get_ml_state());
-                        } else {
-                            let empty_text = Paragraph::new("Directory Empty :(")
-                                .style(Style::default().fg(app_props.get_theme().get_pr()))
-                                .centered()
-                                .block(block);
-                            frame.render_widget(empty_text, area);
-                        }
-            */
             frame.render_widget(block, area);
         } else {
-            frame.render_widget(block, area);
+            let empty_text = Paragraph::new("Directory Empty :(")
+                .style(Style::default().fg(app_props.get_theme().get_pr()))
+                .centered()
+                .block(block);
+            frame.render_widget(empty_text, area);
         }
     }
 

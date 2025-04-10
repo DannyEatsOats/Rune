@@ -66,16 +66,28 @@ impl<'a> App<'a> {
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let next = (selected + 1).min(self.properties.items.lock().unwrap().len());
-                    self.properties.cursor =
-                        self.properties.items.lock().unwrap().get(next).cloned();
+                    let path = self.properties.items.lock().unwrap().get(next).cloned();
+                    let mut metadata = None;
+                    if let Some(p) = &path {
+                        if let Ok(md) = p.metadata() {
+                            metadata = Some(md);
+                        }
+                    }
+                    self.properties.cursor = (path, metadata);
                     self.properties.main_list_state.select(Some(next));
                 }
             }
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let prev = selected.saturating_sub(1);
-                    self.properties.cursor =
-                        self.properties.items.lock().unwrap().get(prev).cloned();
+                    let path = self.properties.items.lock().unwrap().get(prev).cloned();
+                    let mut metadata = None;
+                    if let Some(p) = &path {
+                        if let Ok(md) = p.metadata() {
+                            metadata = Some(md);
+                        }
+                    }
+                    self.properties.cursor = (path, metadata);
                     self.properties.main_list_state.select(Some(prev));
                 }
             }
@@ -176,6 +188,21 @@ impl<'a> App<'a> {
             };
             self.properties.main_list_state.select(Some(cursor_idx));
             self.ui.set_main_items(&self.properties);
+
+            let path = self
+                .properties
+                .items
+                .lock()
+                .unwrap()
+                .get(cursor_idx)
+                .cloned();
+            let mut metadata = None;
+            if let Some(p) = &path {
+                if let Ok(md) = p.metadata() {
+                    metadata = Some(md);
+                }
+            }
+            self.properties.cursor = (path, metadata);
         }
     }
 
@@ -187,6 +214,15 @@ impl<'a> App<'a> {
             self.properties.items = Arc::new(Mutex::new(items));
         }
         self.ui.set_main_items(&self.properties);
+        let path = self.properties.items.lock().unwrap().get(0).cloned();
+        let mut metadata = None;
+        if let Some(p) = &path {
+            if let Ok(md) = p.metadata() {
+                metadata = Some(md);
+            }
+        }
+
+        self.properties.cursor = (path, metadata);
     }
 
     fn correct_ml_state(&mut self) {
