@@ -1,12 +1,17 @@
 use std::{
     ffi::OsStr,
+    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
+    time::SystemTime,
+    usize,
 };
 
 use crate::{
     app::*,
     app_properties::{AppMode, AppProperties},
 };
+use chrono::{DateTime, Local};
+use crossterm::style::style;
 use devicons;
 use ratatui::{
     Frame,
@@ -16,10 +21,58 @@ use ratatui::{
     widgets::*,
 };
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use std::fmt::Debug;
+use std::ops::{Add, Div, Mul, Sub};
 
 pub mod input;
 mod layout;
 pub mod theme;
+
+pub trait ByteReadable:
+    Copy
+    + Debug
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + PartialOrd
+    + PartialEq
+{
+    fn to_f64(self) -> f64;
+    fn from_f64(f: f64) -> Self;
+
+    fn byte_display(&self) -> String {
+        const BYTE_TYPES: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
+        let mut val = *self;
+        let mut index = 0;
+        let limit = Self::from_f64(1024.0);
+
+        while val > limit && index < BYTE_TYPES.len() - 1 {
+            val = val / limit;
+            index += 1;
+        }
+
+        format!("{:.2}{}", val.to_f64(), BYTE_TYPES[index])
+    }
+}
+
+macro_rules! impl_byte_readable {
+    ($($t:ty),*) => {
+        $(
+            impl ByteReadable for $t {
+                fn to_f64(self) -> f64 {
+                    self as f64
+                }
+
+                fn from_f64(f: f64) -> Self {
+                    f as $t
+                }
+            }
+        )*
+    };
+}
+
+impl_byte_readable!(u8, u16, u32, u64, usize, i32, i64, f32, f64);
 
 //A major problem here, is that since the ui is updated every frame, there are a bunch of
 //operations that will run on every frame that should be saved or cached. On big datasets, this
@@ -257,14 +310,47 @@ impl<'a> UI<'a> {
         let block = Block::default()
             .borders(Borders::ALL)
             .style(Style::default().fg(app_props.get_theme().get_fg()))
-            .fg(app_props.get_theme().get_fg());
+            .fg(app_props.get_theme().get_fg())
+            .padding(Padding::horizontal(1));
 
-        let app_mode = Paragraph::new(app_props.mode.to_string())
-            .style(Style::default().fg(app_props.get_theme().get_mt()))
-            .block(block);
+        let cursor = &app_props.cursor;
+        let mode = app_props.mode.to_string();
+        let mut text = String::new();
+        if let Some(md) = &cursor.1 {
+            let size = md.len().byte_display();
+            let datetime: DateTime<Local> = md.created().unwrap_or(SystemTime::UNIX_EPOCH).into();
+            let datetime = datetime.format("%Y-%m-%d").to_string();
 
-        // Add directory and/or file properties here
+            text.push_str(&format!("{size} {datetime}"));
+        }
 
-        frame.render_widget(app_mode, area);
+        let perms_span = Span::styled(&text, Style::default().fg(app_props.get_theme().get_st()));
+        let mode = &app_props.mode;
+        let mode_span = match &mode {
+            AppMode::Normal => Span::styled(
+                mode.to_string(),
+                Style::default().fg(app_props.get_theme().get_mt()),
+            ),
+            AppMode::Edit => Span::styled(
+                mode.to_string(),
+                Style::default().fg(app_props.get_theme().get_bg()),
+            ),
+            AppMode::Search => Span::styled(
+                mode.to_string(),
+                Style::default().fg(app_props.get_theme().get_ht()),
+            ),
+            AppMode::Compare => Span::styled(
+                mode.to_string(),
+                Style::default().fg(app_props.get_theme().get_ht()),
+            ),
+        };
+        let space = (area.width as usize - 3).saturating_sub(mode.to_string().len() + text.len());
+        let space = Span::styled(" ".repeat(space), Style::default());
+
+        let line = Line::from(vec![mode_span, space, perms_span]).style(Style::default());
+
+        let status_line = Paragraph::new(line).style(Style::default()).block(block);
+
+        frame.render_widget(status_line, area);
     }
 }
