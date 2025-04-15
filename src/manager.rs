@@ -24,13 +24,18 @@ impl fmt::Display for ManagerError {
     }
 }
 
+pub enum IndexOption {
+    Simple,
+    Recursive,
+}
+
 pub struct Manager {
     root: PathBuf,
     homedir: PathBuf,
     current: PathBuf,
     is_searching: Arc<Mutex<bool>>,
     pathstack: Vec<(PathBuf, usize)>,
-    index: HashMap<String, HashSet<PathBuf>>,
+    index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
     cache: HashMap<String, HashSet<PathBuf>>,
 }
 
@@ -39,15 +44,20 @@ impl Manager {
     pub fn new() -> Self {
         let home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
 
-        Self {
+        let mut manager = Self {
             root: PathBuf::from("/"),
             homedir: home.clone(),
             current: home.clone(),
             is_searching: Arc::new(Mutex::new(false)),
             pathstack: Vec::new(),
-            index: HashMap::new(),
+            index: Arc::new(Mutex::new(HashMap::new())),
             cache: HashMap::new(),
-        }
+        };
+
+        let start = Instant::now();
+        manager.build_index(&home, IndexOption::Recursive);
+        println!("Elapsed: {:?}", start.elapsed());
+        manager
     }
 
     pub fn get_current_path(&self) -> &PathBuf {
@@ -161,7 +171,7 @@ impl Manager {
 
     ///Searches the indexed files and directorioes of the manager
     fn index_search(&mut self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
-        if let Some(res) = self.index.get(term) {
+        if let Some(res) = self.index.lock().unwrap().get(term) {
             let mut items = items.lock().unwrap();
 
             res.iter().for_each(|item| {
@@ -251,5 +261,44 @@ impl Manager {
         let items = self.read_dir(&self.current).unwrap();
 
         Ok(items)
+    }
+
+    /// BUilds the index for the manager. Simple -> directory provided. Recursive -> recursive from
+    /// directory provided
+    pub fn build_index(&self, folder: &PathBuf, option: IndexOption) -> Result<(), Box<dyn Error>> {
+        let items: Vec<_> = fs::read_dir(folder)?
+            .filter_map(Result::ok)
+            .filter(|item| !item.file_name().to_string_lossy().starts_with("."))
+            .collect();
+
+        if items.len() > 500 {
+            return Ok(());
+        }
+
+        items.par_iter().for_each(|item| {
+            let path = item.path();
+            if let Some(name) = path.file_name() {
+                self.index
+                    .lock()
+                    .unwrap()
+                    .entry(name.to_string_lossy().to_string())
+                    .and_modify(|paths| {
+                        paths.insert(path.to_path_buf());
+                    })
+                    .or_insert_with(|| {
+                        let mut hs = HashSet::new();
+                        hs.insert(path.to_path_buf());
+                        hs
+                    });
+
+                if let IndexOption::Recursive = option {
+                    if path.is_dir() {
+                        self.build_index(&path, IndexOption::Recursive).unwrap();
+                    }
+                }
+            }
+        });
+
+        Ok(())
     }
 }
