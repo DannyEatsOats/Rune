@@ -1,3 +1,4 @@
+use core::str;
 use std::{
     ffi::OsStr,
     os::unix::fs::PermissionsExt,
@@ -8,7 +9,7 @@ use std::{
 
 use crate::{
     app::*,
-    app_properties::{AppMode, AppProperties},
+    app_properties::{self, AppMode, AppProperties},
 };
 use chrono::{DateTime, Local};
 use crossterm::style::style;
@@ -180,10 +181,20 @@ impl<'a> UI<'a> {
                 .style(Style::default().fg(app_props.get_theme().get_fg()))
                 .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
                 .scroll_padding(5)
-                .block(block.clone())
                 .highlight_symbol(">> ");
 
-            frame.render_stateful_widget(list.clone(), area, app_props.get_ml_state());
+            let relative_nums = self.generate_relative_nums(app_props);
+
+            let areas = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(5), Constraint::Percentage(95)])
+                .split(block.inner(area));
+
+            frame.render_widget(block, area);
+            if let Some(relative_nums) = relative_nums {
+                frame.render_stateful_widget(relative_nums, areas[0], app_props.get_ml_state());
+            }
+            frame.render_stateful_widget(list.clone(), areas[1], app_props.get_ml_state());
         } else {
             let empty_text = Paragraph::new("Directory Empty :(")
                 .style(Style::default().fg(app_props.get_theme().get_pr()))
@@ -353,5 +364,26 @@ impl<'a> UI<'a> {
         let status_line = Paragraph::new(line).style(Style::default()).block(block);
 
         frame.render_widget(status_line, area);
+    }
+
+    fn generate_relative_nums(&self, app_props: &mut AppProperties) -> Option<List> {
+        let idx = app_props.get_ml_state().selected().unwrap_or(0);
+        let size = self.list.as_ref()?.len();
+        let items: Vec<ListItem> = (0..size)
+            .map(|i| {
+                let num = if i == idx {
+                    format!("{i}")
+                } else {
+                    format!("{:>3} ", (i as isize - idx as isize).abs())
+                };
+                ListItem::new(num)
+            })
+            .collect();
+
+        let list = List::new(items)
+            .style(Style::default().fg(app_props.get_theme().get_s3()))
+            .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
+            .scroll_padding(5);
+        Some(list)
     }
 }
