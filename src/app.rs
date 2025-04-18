@@ -7,12 +7,14 @@ use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::app_properties::{AppMode, AppProperties};
 use crate::manager::{self, *};
+use crate::offset_buffer::{self, OffsetBuffer};
 use crate::ui::*;
 
 /// A struct representing the App. It holds state and handles user events.
 pub struct App<'a> {
     properties: AppProperties,
     ui: UI<'a>,
+    offset_buffer: OffsetBuffer,
 }
 
 impl<'a> App<'a> {
@@ -22,6 +24,7 @@ impl<'a> App<'a> {
         let mut app = Self {
             properties: AppProperties::new(),
             ui: UI::new(&properties),
+            offset_buffer: OffsetBuffer::new(),
         };
 
         app
@@ -69,20 +72,24 @@ impl<'a> App<'a> {
 
     /// Handles normal mode keyevents, modifiers
     pub fn handle_normal_mode(&mut self, key_event: &KeyEvent) {
+        self.offset_buffer.buff_event(&key_event);
         match key_event.code {
             KeyCode::Char('q') => {
                 self.properties.exit = true;
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
-                    let next = (selected + 1).min(self.properties.items.lock().unwrap().len() - 1);
+                    let offset = self.offset_buffer.get_offset();
+                    let next =
+                        (selected + offset).min(self.properties.items.lock().unwrap().len() - 1);
                     self.generate_cursor(next);
                     self.properties.main_list_state.select(Some(next));
                 }
             }
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
-                    let prev = selected.saturating_sub(1);
+                    let offset = self.offset_buffer.get_offset();
+                    let prev = selected.saturating_sub(offset);
                     self.generate_cursor(prev);
                     self.properties.main_list_state.select(Some(prev));
                 }
@@ -141,6 +148,7 @@ impl<'a> App<'a> {
                 if !self.properties.manager.is_searching() {
                     let items = Arc::clone(&self.properties.items);
                     let term = self.properties.search_input.get_value();
+                    // PANICS! on empty input
                     self.properties
                         .manager
                         .perform_search(

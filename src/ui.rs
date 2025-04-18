@@ -187,7 +187,7 @@ impl<'a> UI<'a> {
 
             let areas = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(5), Constraint::Percentage(95)])
+                .constraints([Constraint::Percentage(9), Constraint::Percentage(91)])
                 .split(block.inner(area));
 
             frame.render_widget(block, area);
