@@ -1,7 +1,8 @@
 use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use std::io::BufRead;
+use std::io::{BufRead, Read};
+use std::os::unix::thread;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -114,28 +115,25 @@ impl Manager {
     }
 
     pub fn read_file(&self, path: &PathBuf) -> io::Result<String> {
-        let file = fs::File::open(path)?;
-        let reader = io::BufReader::new(file);
-        let mut reader = reader.lines();
-        let mut content = String::new();
-
         if !path.is_file() {
             return Err(io::ErrorKind::IsADirectory.into());
         }
 
-        for i in 0..100 {
-            let line = reader.next();
-            if let Some(line) = line {
-                if let Ok(line) = line {
-                    content.push_str(&line);
-                    content.push_str("\n");
-                }
-            } else {
-                return Ok(content);
-            }
-        }
+        let mut file = fs::File::open(path)?;
+        let mut buffer = vec![0; 16 * 1024];
+        let bytes = file.read(&mut buffer)?;
+        buffer.truncate(bytes);
 
-        Ok(content)
+        match std::str::from_utf8(&buffer) {
+            Ok(text) => {
+                let preview: String = text.lines().take(100).collect::<Vec<&str>>().join("\n");
+                Ok(preview)
+            }
+            Err(_) => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Binary or non-UTF-8 file",
+            )),
+        }
     }
 
     /// Starts the search process. First calling cache_search(), index_search() then fallback_search()

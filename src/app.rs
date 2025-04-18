@@ -1,12 +1,12 @@
-use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::{io, thread};
 
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::app_properties::{AppMode, AppProperties};
-use crate::manager::*;
+use crate::manager::{self, *};
 use crate::ui::*;
 
 /// A struct representing the App. It holds state and handles user events.
@@ -31,6 +31,16 @@ impl<'a> App<'a> {
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
+        let mut manager_arc = Arc::new(Mutex::new(&app.properties.manager));
+        //Somehow I want to run the index building in the background so it doesnt block for UI/UX
+        /*
+                thread::spawn(|| {
+                    manager_arc
+                        .lock()
+                        .unwrap()
+                        .build_index(&PathBuf::from("/"), IndexOption::Simple);
+                });
+        */
         while !app.properties.exit {
             // Later add the input blinker functionality here
             terminal.draw(|f| app.ui.draw(f, &mut app.properties))?;
@@ -65,29 +75,15 @@ impl<'a> App<'a> {
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
-                    let next = (selected + 1).min(self.properties.items.lock().unwrap().len());
-                    let path = self.properties.items.lock().unwrap().get(next).cloned();
-                    let mut metadata = None;
-                    if let Some(p) = &path {
-                        if let Ok(md) = p.metadata() {
-                            metadata = Some(md);
-                        }
-                    }
-                    self.properties.cursor = (path, metadata);
+                    let next = (selected + 1).min(self.properties.items.lock().unwrap().len() - 1);
+                    self.generate_cursor(next);
                     self.properties.main_list_state.select(Some(next));
                 }
             }
             KeyCode::Up | KeyCode::Char('k') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let prev = selected.saturating_sub(1);
-                    let path = self.properties.items.lock().unwrap().get(prev).cloned();
-                    let mut metadata = None;
-                    if let Some(p) = &path {
-                        if let Ok(md) = p.metadata() {
-                            metadata = Some(md);
-                        }
-                    }
-                    self.properties.cursor = (path, metadata);
+                    self.generate_cursor(prev);
                     self.properties.main_list_state.select(Some(prev));
                 }
             }
@@ -189,20 +185,7 @@ impl<'a> App<'a> {
             self.properties.main_list_state.select(Some(cursor_idx));
             self.ui.set_main_items(&self.properties);
 
-            let path = self
-                .properties
-                .items
-                .lock()
-                .unwrap()
-                .get(cursor_idx)
-                .cloned();
-            let mut metadata = None;
-            if let Some(p) = &path {
-                if let Ok(md) = p.metadata() {
-                    metadata = Some(md);
-                }
-            }
-            self.properties.cursor = (path, metadata);
+            self.generate_cursor(cursor_idx);
         }
     }
 
@@ -214,14 +197,17 @@ impl<'a> App<'a> {
             self.properties.items = Arc::new(Mutex::new(items));
         }
         self.ui.set_main_items(&self.properties);
-        let path = self.properties.items.lock().unwrap().get(0).cloned();
+        self.generate_cursor(0);
+    }
+
+    fn generate_cursor(&mut self, idx: usize) {
+        let path = self.properties.items.lock().unwrap().get(idx).cloned();
         let mut metadata = None;
         if let Some(p) = &path {
             if let Ok(md) = p.metadata() {
                 metadata = Some(md);
             }
         }
-
         self.properties.cursor = (path, metadata);
     }
 

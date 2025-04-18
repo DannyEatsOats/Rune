@@ -248,6 +248,7 @@ impl<'a> UI<'a> {
                     .wrap(Wrap { trim: true })
                     .block(block);
                 frame.render_widget(paragraph, area);
+                return;
             }
         } else if path.is_dir() {
             //This could be added to another function so it can be reused
@@ -290,13 +291,13 @@ impl<'a> UI<'a> {
                 frame.render_widget(list, area);
             }
             frame.render_widget(block, area);
-        } else {
-            let empty_text = Paragraph::new("Directory Empty :(")
-                .style(Style::default().fg(app_props.get_theme().get_pr()))
-                .centered()
-                .block(block);
-            frame.render_widget(empty_text, area);
+            return;
         }
+        let empty_text = Paragraph::new("No preview available :(")
+            .style(Style::default().fg(app_props.get_theme().get_pr()))
+            .centered()
+            .block(block);
+        frame.render_widget(empty_text, area);
     }
 
     /// Generates the background for the current frame
