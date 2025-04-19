@@ -10,6 +10,7 @@ use std::{
 use crate::{
     app::*,
     app_properties::{self, AppMode, AppProperties},
+    manager::OpenOption,
 };
 use chrono::{DateTime, Local};
 use crossterm::style::style;
@@ -263,7 +264,7 @@ impl<'a> UI<'a> {
             }
         } else if path.is_dir() {
             //This could be added to another function so it can be reused
-            let directory = app_props.manager.read_dir(&path);
+            let directory = app_props.manager.read_dir(&path, OpenOption::Preview);
             if let Ok(directory) = directory {
                 if directory.is_empty() {
                     // Refactor this later, cuz 'empty text' gets generated too manny times.

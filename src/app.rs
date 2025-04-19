@@ -182,7 +182,7 @@ impl<'a> App<'a> {
             self.properties.items = Arc::new(Mutex::new(
                 self.properties
                     .manager
-                    .read_dir(self.properties.get_current_path())
+                    .read_dir(self.properties.get_current_path(), OpenOption::Full)
                     .unwrap(),
             ));
             let cursor_idx = if cursor_idx >= self.properties.items.lock().unwrap().len() {

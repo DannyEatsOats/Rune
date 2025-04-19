@@ -8,7 +8,7 @@ use std::{
 use ratatui::widgets::ListState;
 
 use crate::{
-    manager::Manager,
+    manager::{Manager, OpenOption},
     ui::{input, theme},
 };
 
@@ -47,7 +47,9 @@ pub struct AppProperties {
 impl AppProperties {
     pub fn new() -> Self {
         let fm = Manager::new();
-        let items = fm.read_dir(fm.get_current_path()).unwrap();
+        let items = fm
+            .read_dir(fm.get_current_path(), OpenOption::Full)
+            .unwrap();
         let mut cursor = (None, None);
         if let Some(path) = items.first() {
             let mut metadata: Option<Metadata> = None;

@@ -6,7 +6,7 @@ use std::os::unix::thread;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::{fs, io};
+use std::{fs, io, u32, usize};
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
@@ -28,6 +28,11 @@ impl fmt::Display for ManagerError {
 pub enum IndexOption {
     Simple,
     Recursive,
+}
+
+pub enum OpenOption {
+    Full,
+    Preview,
 }
 
 pub struct Manager {
@@ -66,10 +71,14 @@ impl Manager {
     }
 
     /// Returns the directory currently opened in the manager
-    pub fn read_dir(&self, path: &PathBuf) -> std::io::Result<Vec<PathBuf>> {
+    pub fn read_dir(&self, path: &PathBuf, option: OpenOption) -> std::io::Result<Vec<PathBuf>> {
         let mut items = Vec::new();
 
-        for entry in std::fs::read_dir(&path)? {
+        let size = match option {
+            OpenOption::Full => usize::MAX,
+            OpenOption::Preview => 100,
+        };
+        for entry in std::fs::read_dir(&path)?.take(size) {
             let entry = entry?;
             let path = entry.path();
 
@@ -240,6 +249,10 @@ impl Manager {
             self.current = prev;
             return Ok(cursor_idx);
         }
+        if self.current.pop() {
+            return Ok(0);
+        }
+
         Err(ManagerError::InvalidPath)
     }
 
@@ -256,7 +269,7 @@ impl Manager {
         self.current = new_path;
 
         //I'll have to handle this error here better later on
-        let items = self.read_dir(&self.current).unwrap();
+        let items = self.read_dir(&self.current, OpenOption::Full).unwrap();
 
         Ok(items)
     }
