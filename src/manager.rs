@@ -15,6 +15,7 @@ use crate::ui::UI;
 #[derive(Debug)]
 pub enum ManagerError {
     InvalidPath,
+    NoPermission,
 }
 
 impl Error for ManagerError {}
@@ -48,9 +49,9 @@ pub struct Manager {
 impl Manager {
     /// Creates a new instace of the FileManager
     pub fn new() -> Self {
-        let home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
+        let mut home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
 
-        let mut manager = Self {
+        let manager = Self {
             root: PathBuf::from("/"),
             homedir: home.clone(),
             current: home.clone(),
@@ -60,9 +61,9 @@ impl Manager {
             cache: HashMap::new(),
         };
 
-        let start = Instant::now();
-        manager.build_index(&home, IndexOption::Recursive);
-        println!("Elapsed: {:?}", start.elapsed());
+        manager
+            .build_index(&home, IndexOption::Recursive)
+            .unwrap_or(());
         manager
     }
 
@@ -274,10 +275,33 @@ impl Manager {
         Ok(items)
     }
 
-    /// BUilds the index for the manager. Simple -> directory provided. Recursive -> recursive from
+    /// Public function for building the index. Spawns a thread so the building can run in the
+    /// background. Calls Manager::index_recursion
+    pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
+        let index = Arc::clone(&self.index);
+        let index2 = Arc::clone(&self.index);
+        let dir = dir.clone();
+
+        std::thread::spawn(move || {
+            Manager::index_recursion(index, &dir, option);
+            Manager::save_index(index2);
+        });
+        Ok(())
+    }
+
+    /// Builds the index for the manager. Simple -> directory provided. Recursive -> recursive from
     /// directory provided
-    pub fn build_index(&self, folder: &PathBuf, option: IndexOption) -> Result<(), Box<dyn Error>> {
-        let items: Vec<_> = fs::read_dir(folder)?
+    fn index_recursion(
+        index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
+        dir: &PathBuf,
+        option: IndexOption,
+    ) -> Result<(), ManagerError> {
+        let entry_it = fs::read_dir(dir);
+        if entry_it.is_err() {
+            return Err(ManagerError::NoPermission);
+        }
+        let items: Vec<_> = entry_it
+            .unwrap()
             .filter_map(Result::ok)
             .filter(|item| !item.file_name().to_string_lossy().starts_with("."))
             .collect();
@@ -289,7 +313,7 @@ impl Manager {
         items.par_iter().for_each(|item| {
             let path = item.path();
             if let Some(name) = path.file_name() {
-                self.index
+                index
                     .lock()
                     .unwrap()
                     .entry(name.to_string_lossy().to_string())
@@ -304,12 +328,22 @@ impl Manager {
 
                 if let IndexOption::Recursive = option {
                     if path.is_dir() {
-                        self.build_index(&path, IndexOption::Recursive).unwrap();
+                        Manager::index_recursion(index.clone(), &path, IndexOption::Recursive);
                     }
                 }
             }
         });
+        Ok(())
+    }
 
+    pub fn save_index(
+        index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
+    ) -> Result<(), Box<dyn Error>> {
+        fs::create_dir_all("index/").unwrap();
+        let file = fs::File::create("index/index.json")?;
+        let index = index.lock().unwrap();
+
+        serde_json::to_writer(file, &*index)?;
         Ok(())
     }
 }

@@ -34,16 +34,6 @@ impl<'a> App<'a> {
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
-        let mut manager_arc = Arc::new(Mutex::new(&app.properties.manager));
-        //Somehow I want to run the index building in the background so it doesnt block for UI/UX
-        /*
-                thread::spawn(|| {
-                    manager_arc
-                        .lock()
-                        .unwrap()
-                        .build_index(&PathBuf::from("/"), IndexOption::Simple);
-                });
-        */
         while !app.properties.exit {
             // Later add the input blinker functionality here
             terminal.draw(|f| app.ui.draw(f, &mut app.properties))?;
