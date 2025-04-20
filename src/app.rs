@@ -67,6 +67,7 @@ impl<'a> App<'a> {
         match key_event.code {
             KeyCode::Char('q') => {
                 self.properties.exit = true;
+                self.properties.manager.shutdown();
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
