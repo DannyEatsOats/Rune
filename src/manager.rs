@@ -61,11 +61,15 @@ impl Manager {
             cache: HashMap::new(),
         };
 
-        //home.push("projects/");
         manager
             .build_index(&home, IndexOption::Recursive)
             .unwrap_or(());
         manager
+    }
+
+    pub fn shutdown(&self) {
+        let index = Arc::clone(&self.index);
+        Manager::save_index(index);
     }
 
     pub fn get_current_path(&self) -> &PathBuf {
@@ -283,14 +287,11 @@ impl Manager {
     pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
         let index = Arc::clone(&self.index);
         let index2 = Arc::clone(&self.index);
-        let index3 = Arc::clone(&self.index);
         let dir = dir.clone();
 
         std::thread::spawn(move || {
-            //Manager::index_recursion(index, &dir, option);
-            //Manager::save_index(index2);
-            std::thread::sleep(Duration::from_secs(5));
-            println!("Done {}", index3.lock().unwrap().len());
+            Manager::index_recursion(index, &dir, option);
+            Manager::save_index(index2);
         });
         Ok(())
     }
@@ -302,6 +303,9 @@ impl Manager {
         dir: &PathBuf,
         option: IndexOption,
     ) -> Result<(), ManagerError> {
+        if index.lock().unwrap().len() > 10000 {
+            return Ok(());
+        }
         let entry_it = fs::read_dir(dir);
         if entry_it.is_err() {
             return Err(ManagerError::NoPermission);
@@ -318,7 +322,7 @@ impl Manager {
 
         items.par_iter().for_each(|item| {
             let path = item.path();
-            if let Some(name) = path.file_name() {
+            if let Some(name) = path.file_stem() {
                 index
                     .lock()
                     .unwrap()

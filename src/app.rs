@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
@@ -20,11 +21,10 @@ pub struct App<'a> {
 impl<'a> App<'a> {
     /// Creates an instance of *App*
     pub fn new() -> Self {
-        //MAYBE I NEED TO USE AN 'RC<>' here
         let mut properties = AppProperties::new();
         let mut app = Self {
-            properties: AppProperties::new(),
             ui: UI::new(&properties),
+            properties: properties,
             offset_buffer: OffsetBuffer::new(),
         };
 
