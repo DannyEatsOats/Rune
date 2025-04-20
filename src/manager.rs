@@ -61,9 +61,12 @@ impl Manager {
             cache: HashMap::new(),
         };
 
-        manager
-            .build_index(&home, IndexOption::Recursive)
-            .unwrap_or(());
+        if !PathBuf::from("index/index.json").exists() {
+            manager
+                .build_index(&home, IndexOption::Recursive)
+                .unwrap_or(());
+        }
+
         manager
     }
 
