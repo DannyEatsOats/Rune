@@ -20,6 +20,7 @@ pub struct App<'a> {
 impl<'a> App<'a> {
     /// Creates an instance of *App*
     pub fn new() -> Self {
+        //MAYBE I NEED TO USE AN 'RC<>' here
         let mut properties = AppProperties::new();
         let mut app = Self {
             properties: AppProperties::new(),
@@ -167,7 +168,8 @@ impl<'a> App<'a> {
     }
 
     pub fn step_back(&mut self) {
-        //[[TODO]] I'll need better error handling here
+        // TODO: I'll need better error handling here
+        // TODO: I'll have to to create some kind of error buffer
         if let Ok(cursor_idx) = self.properties.manager.step_back() {
             self.properties.items = Arc::new(Mutex::new(
                 self.properties

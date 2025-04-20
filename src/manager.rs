@@ -61,6 +61,7 @@ impl Manager {
             cache: HashMap::new(),
         };
 
+        //home.push("projects/");
         manager
             .build_index(&home, IndexOption::Recursive)
             .unwrap_or(());
@@ -165,11 +166,13 @@ impl Manager {
         self.pathstack.push((self.current.clone(), cursor_idx));
         items.lock().unwrap().clear();
 
+        // TODO: split term into filename and extension
+        *self.is_searching.lock().unwrap() = true;
         self.cache_search();
 
         self.index_search(term, &items);
 
-        self.fallback_search(term, &items);
+        //self.fallback_search(term, &items);
 
         Ok(())
     }
@@ -184,6 +187,7 @@ impl Manager {
 
             res.iter().for_each(|item| {
                 items.push(item.clone());
+                println!("{item:?}");
             });
             drop(items);
         }
@@ -196,7 +200,6 @@ impl Manager {
         let term = term.to_string();
         let path = self.current.clone();
         tokio::spawn(async move {
-            *is_searching_arc.lock().unwrap() = true;
             Manager::fallback_recursion(&term, path, items, Instant::now()).unwrap();
             *is_searching_arc.lock().unwrap() = false;
         });
@@ -280,11 +283,14 @@ impl Manager {
     pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
         let index = Arc::clone(&self.index);
         let index2 = Arc::clone(&self.index);
+        let index3 = Arc::clone(&self.index);
         let dir = dir.clone();
 
         std::thread::spawn(move || {
-            Manager::index_recursion(index, &dir, option);
-            Manager::save_index(index2);
+            //Manager::index_recursion(index, &dir, option);
+            //Manager::save_index(index2);
+            std::thread::sleep(Duration::from_secs(5));
+            println!("Done {}", index3.lock().unwrap().len());
         });
         Ok(())
     }

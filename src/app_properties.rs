@@ -3,6 +3,7 @@ use std::{
     fs::Metadata,
     path::PathBuf,
     sync::{Arc, Mutex},
+    time::Duration,
 };
 
 use ratatui::widgets::ListState;
