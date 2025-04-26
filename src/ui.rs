@@ -1,11 +1,5 @@
 use core::str;
-use std::{
-    ffi::OsStr,
-    os::unix::fs::PermissionsExt,
-    path::{Path, PathBuf},
-    time::SystemTime,
-    usize,
-};
+use std::{path::PathBuf, time::SystemTime, usize};
 
 use crate::{
     app::*,

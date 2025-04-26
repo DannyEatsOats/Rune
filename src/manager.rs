@@ -2,7 +2,6 @@ use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::io::{BufRead, Read};
-use std::os::unix::thread;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
