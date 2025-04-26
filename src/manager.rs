@@ -41,6 +41,7 @@ pub struct Manager {
     homedir: PathBuf,
     current: PathBuf,
     is_searching: Arc<Mutex<bool>>,
+    is_indexing: Arc<Mutex<bool>>,
     pathstack: Vec<(PathBuf, usize)>,
     index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
     cache: HashMap<String, HashSet<PathBuf>>,
@@ -56,16 +57,17 @@ impl Manager {
             homedir: home.clone(),
             current: home.clone(),
             is_searching: Arc::new(Mutex::new(false)),
+            is_indexing: Arc::new(Mutex::new(false)),
             pathstack: Vec::new(),
             index: Arc::new(Mutex::new(HashMap::new())),
             cache: HashMap::new(),
         };
 
-        if !PathBuf::from("index/index.json").exists() {
-            manager
-                .build_index(&home, IndexOption::Recursive)
-                .unwrap_or(());
-        }
+        //if !PathBuf::from("index/index.json").exists() {
+        manager
+            .build_index(&home, IndexOption::Recursive)
+            .unwrap_or(());
+        //}
 
         manager
     }
@@ -154,6 +156,9 @@ impl Manager {
         }
     }
 
+    // TODO: Search results should be stored in a HashSet, because multiple search processes might
+    // add the same items
+
     /// Starts the search process. First calling cache_search(), index_search() then fallback_search()
     pub fn perform_search(
         &mut self,
@@ -179,7 +184,7 @@ impl Manager {
 
         self.index_search(term, &items);
 
-        //self.fallback_search(term, &items);
+        self.fallback_search(term, &items);
 
         Ok(())
     }
@@ -194,7 +199,7 @@ impl Manager {
 
             res.iter().for_each(|item| {
                 items.push(item.clone());
-                println!("{item:?}");
+                //println!("{item:?}");
             });
             drop(items);
         }
@@ -255,6 +260,10 @@ impl Manager {
         *self.is_searching.lock().unwrap()
     }
 
+    pub fn is_indexing(&self) -> bool {
+        *self.is_indexing.lock().unwrap()
+    }
+
     pub fn step_back(&mut self) -> Result<usize, ManagerError> {
         if let Some((prev, cursor_idx)) = self.pathstack.pop() {
             self.current = prev;
@@ -290,11 +299,14 @@ impl Manager {
     pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
         let index = Arc::clone(&self.index);
         let index2 = Arc::clone(&self.index);
+        let is_indexing = Arc::clone(&self.is_indexing);
         let dir = dir.clone();
 
         std::thread::spawn(move || {
+            *is_indexing.lock().unwrap() = true;
             Manager::index_recursion(index, &dir, option);
             Manager::save_index(index2);
+            *is_indexing.lock().unwrap() = false;
         });
         Ok(())
     }

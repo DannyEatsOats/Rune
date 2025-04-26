@@ -17,7 +17,7 @@ use crossterm::style::style;
 use devicons;
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style, Stylize},
     text::{Line, Span, Text},
     widgets::*,
@@ -357,14 +357,36 @@ impl<'a> UI<'a> {
                 Style::default().fg(app_props.get_theme().get_ht()),
             ),
         };
-        let space = (area.width as usize - 3).saturating_sub(mode.to_string().len() + text.len());
+
+        let space = (area.width as usize - 4).saturating_sub(mode.to_string().len() + text.len());
         let space = Span::styled(" ".repeat(space), Style::default());
 
-        let line = Line::from(vec![mode_span, space, perms_span]).style(Style::default());
+        let status_line = Line::from(vec![mode_span, space, perms_span]).style(Style::default());
 
-        let status_line = Paragraph::new(line).style(Style::default()).block(block);
+        let status_update = self.generate_status_update(app_props);
+
+        let status_line = Paragraph::new(vec![status_line, status_update])
+            .style(Style::default())
+            .block(block);
 
         frame.render_widget(status_line, area);
+    }
+
+    fn generate_status_update(&self, app_props: &AppProperties) -> Line {
+        let mut text = String::new();
+        if app_props.manager.is_indexing() {
+            text.push_str("Indexing");
+        }
+        if app_props.manager.is_searching() {
+            if !text.is_empty() {
+                text.push_str(", ");
+            }
+            text.push_str("Searching");
+        }
+
+        Line::from(text)
+            .style(Style::default())
+            .alignment(Alignment::Center)
     }
 
     fn generate_relative_nums(&self, app_props: &mut AppProperties) -> Option<List> {
