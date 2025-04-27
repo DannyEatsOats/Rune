@@ -41,6 +41,7 @@ pub struct Manager {
     current: PathBuf,
     is_searching: Arc<Mutex<bool>>,
     is_indexing: Arc<Mutex<bool>>,
+    is_loading: bool,
     pathstack: Vec<(PathBuf, usize)>,
     index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
     cache: HashMap<String, HashSet<PathBuf>>,
@@ -51,22 +52,31 @@ impl Manager {
     pub fn new() -> Self {
         let mut home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
 
-        let manager = Self {
+        let mut manager = Self {
             root: PathBuf::from("/"),
             homedir: home.clone(),
             current: home.clone(),
             is_searching: Arc::new(Mutex::new(false)),
             is_indexing: Arc::new(Mutex::new(false)),
+            is_loading: false,
             pathstack: Vec::new(),
             index: Arc::new(Mutex::new(HashMap::new())),
             cache: HashMap::new(),
         };
 
-        //if !PathBuf::from("index/index.json").exists() {
-        manager
-            .build_index(&home, IndexOption::Recursive)
-            .unwrap_or(());
-        //}
+        if !PathBuf::from("index/index.json").exists() {
+            manager
+                .build_index(&home, IndexOption::Recursive)
+                .unwrap_or(());
+        } else {
+            manager.is_loading = true;
+            manager.load_index().unwrap_or_else(|_| {
+                manager
+                    .build_index(&home, IndexOption::Recursive)
+                    .unwrap_or(());
+            });
+            manager.is_loading = false;
+        }
 
         manager
     }
@@ -263,6 +273,10 @@ impl Manager {
         *self.is_indexing.lock().unwrap()
     }
 
+    pub fn is_loading(&self) -> bool {
+        self.is_loading
+    }
+
     pub fn step_back(&mut self) -> Result<usize, ManagerError> {
         if let Some((prev, cursor_idx)) = self.pathstack.pop() {
             self.current = prev;
@@ -368,6 +382,13 @@ impl Manager {
         let index = index.lock().unwrap();
 
         serde_json::to_writer(file, &*index)?;
+        Ok(())
+    }
+
+    pub fn load_index(&mut self) -> Result<(), Box<dyn Error>> {
+        let file = fs::read_to_string("index/index.json")?;
+        let index: HashMap<String, HashSet<PathBuf>> = serde_json::from_str(&file)?;
+        *self.index.lock().unwrap() = index;
         Ok(())
     }
 }

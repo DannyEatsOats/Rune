@@ -377,6 +377,12 @@ impl<'a> UI<'a> {
             }
             text.push_str("Searching");
         }
+        if app_props.manager.is_loading() {
+            if !text.is_empty() {
+                text.push_str(", ");
+            }
+            text.push_str("Loading");
+        }
 
         Line::from(text)
             .style(Style::default())
