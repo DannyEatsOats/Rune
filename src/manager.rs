@@ -4,7 +4,7 @@ use std::error::Error;
 use std::io::{BufRead, Read};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 use std::{fs, io, u32, usize};
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -387,7 +387,23 @@ impl Manager {
 
     pub fn load_index(&mut self) -> Result<(), Box<dyn Error>> {
         let file = fs::read_to_string("index/index.json")?;
-        let index: HashMap<String, HashSet<PathBuf>> = serde_json::from_str(&file)?;
+        let mut index: HashMap<String, HashSet<PathBuf>> = serde_json::from_str(&file)?;
+        index.iter_mut().for_each(|(_, value)| {
+            value.retain(|path| {
+                let metadata = path.metadata();
+                let mut valid = true;
+                if let Ok(metadata) = metadata {
+                    let mod_time = metadata.modified().unwrap_or(SystemTime::now());
+                    valid = mod_time
+                        .elapsed()
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs()
+                        < Duration::from_secs(60 * 60 * 24 * 300).as_secs();
+                }
+                println!("{}", path.exists() && valid);
+                path.exists() && valid
+            });
+        });
         *self.index.lock().unwrap() = index;
         Ok(())
     }

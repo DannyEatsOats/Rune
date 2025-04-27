@@ -35,17 +35,20 @@ impl<'a> App<'a> {
     /// *events* get handled asyncronously
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
-        while !app.properties.exit {
-            // Later add the input blinker functionality here
-            terminal.draw(|f| app.ui.draw(f, &mut app.properties))?;
-            app.correct_ml_state();
+        /*
+                while !app.properties.exit {
+                    // Later add the input blinker functionality here
+                    terminal.draw(|f| app.ui.draw(f, &mut app.properties))?;
+                    app.correct_ml_state();
 
-            if crossterm::event::poll(std::time::Duration::from_millis(50))? {
-                if let Event::Key(key) = crossterm::event::read()? {
-                    app.handle_key_event(&key)?;
+                    if crossterm::event::poll(std::time::Duration::from_millis(50))? {
+                        if let Event::Key(key) = crossterm::event::read()? {
+                            app.handle_key_event(&key)?;
+                        }
+                    }
                 }
-            }
-        }
+        */
+        loop {}
 
         Ok(())
     }
