@@ -43,7 +43,7 @@ pub struct Manager {
     is_indexing: Arc<Mutex<bool>>,
     is_loading: bool,
     pathstack: Vec<(PathBuf, usize)>,
-    index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
+    pub index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
     cache: HashMap<String, HashSet<PathBuf>>,
 }
 
@@ -247,10 +247,13 @@ impl Manager {
 
         let content: Vec<_> = fs::read_dir(path)?.filter_map(Result::ok).collect();
         content.par_iter().for_each(|item| {
+            //IT WOULD BE BETTER TO ACCUIRE THE LOCK HERE THEN DROP IT
             let path = item.path();
             if let Some(name) = path.file_name() {
                 let term = term.to_lowercase();
-                if name.to_string_lossy().to_lowercase().contains(&term) {
+                if name.to_string_lossy().to_lowercase().contains(&term)
+                    && !items.lock().unwrap().contains(&path)
+                {
                     items.lock().unwrap().push(path.clone());
                     //BUILD PATH
                 }
@@ -387,24 +390,21 @@ impl Manager {
     pub fn load_index(&mut self) -> Result<(), Box<dyn Error>> {
         let file = fs::read_to_string("index/index.json")?;
         let mut index: HashMap<String, HashSet<PathBuf>> = serde_json::from_str(&file)?;
-        /*
-                index.iter_mut().for_each(|(_, value)| {
-                    value.retain(|path| {
-                        let metadata = path.metadata();
-                        let mut valid = true;
-                        if let Ok(metadata) = metadata {
-                            let mod_time = metadata.modified().unwrap_or(SystemTime::now());
-                            valid = mod_time
-                                .elapsed()
-                                .unwrap_or(Duration::from_secs(0))
-                                .as_secs()
-                                < Duration::from_secs(60 * 60 * 24 * 300).as_secs();
-                        }
-                        println!("{}", path.exists() && valid);
-                        path.exists() && valid
-                    });
-                });
-        */
+        index.iter_mut().for_each(|(_, value)| {
+            value.retain(|path| {
+                let metadata = path.metadata();
+                let mut valid = true;
+                if let Ok(metadata) = metadata {
+                    let mod_time = metadata.modified().unwrap_or(SystemTime::now());
+                    valid = mod_time
+                        .elapsed()
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs()
+                        < Duration::from_secs(60 * 60 * 24 * 30).as_secs();
+                }
+                path.exists() && valid
+            });
+        });
         *self.index.lock().unwrap() = index;
         Ok(())
     }

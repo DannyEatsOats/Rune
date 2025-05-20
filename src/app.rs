@@ -36,7 +36,6 @@ impl<'a> App<'a> {
     pub fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
         let mut app = App::new();
         while !app.properties.exit {
-            // Later add the input blinker functionality here
             terminal.draw(|f| app.ui.draw(f, &mut app.properties))?;
             app.correct_ml_state();
 
@@ -191,6 +190,9 @@ impl<'a> App<'a> {
     }
 
     pub fn change_dir(&mut self, new_path: PathBuf) {
+        if !new_path.is_dir() {
+            return;
+        }
         if let Ok(items) = self.properties.manager.change_dir(
             new_path.clone(),
             self.properties.main_list_state.selected().unwrap_or(0),
