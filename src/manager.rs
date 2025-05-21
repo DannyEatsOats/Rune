@@ -35,47 +35,91 @@ pub enum OpenOption {
     Preview,
 }
 
+struct Flags {
+    pub is_searching: Arc<Mutex<bool>>,
+    pub is_indexing: Arc<Mutex<bool>>,
+    pub is_loading: bool,
+}
+
+impl Flags {
+    pub fn new() -> Self {
+        Self {
+            is_searching: Arc::new(Mutex::new(false)),
+            is_indexing: Arc::new(Mutex::new(false)),
+            is_loading: false,
+        }
+    }
+}
+
+struct Index {
+    index: HashMap<String, HashSet<PathBuf>>,
+    last_sync: Option<SystemTime>,
+}
+
+impl Index {
+    pub fn new() -> Self {
+        Self {
+            index: HashMap::new(),
+            last_sync: None,
+        }
+    }
+}
+
 pub struct Manager {
     root: PathBuf,
     homedir: PathBuf,
     current: PathBuf,
-    is_searching: Arc<Mutex<bool>>,
-    is_indexing: Arc<Mutex<bool>>,
-    is_loading: bool,
+    flags: Flags,
     pathstack: Vec<(PathBuf, usize)>,
-    pub index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
+    index: Arc<Mutex<Index>>,
     cache: HashMap<String, HashSet<PathBuf>>,
 }
 
 impl Manager {
     /// Creates a new instace of the FileManager
     pub fn new() -> Self {
-        let mut home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
+        let home = PathBuf::from(std::env::var("HOME").unwrap_or("/".to_string()));
 
         let mut manager = Self {
             root: PathBuf::from("/"),
             homedir: home.clone(),
             current: home.clone(),
-            is_searching: Arc::new(Mutex::new(false)),
-            is_indexing: Arc::new(Mutex::new(false)),
-            is_loading: false,
+            flags: Flags::new(),
             pathstack: Vec::new(),
-            index: Arc::new(Mutex::new(HashMap::new())),
+            index: Arc::new(Mutex::new(Index::new())),
             cache: HashMap::new(),
         };
 
+        let index = manager.index.lock().unwrap();
+
         if !PathBuf::from("index/index.json").exists() {
+            drop(index);
             manager
                 .build_index(&home, IndexOption::Recursive)
                 .unwrap_or(());
         } else {
-            manager.is_loading = true;
-            manager.load_index().unwrap_or_else(|_| {
+            drop(index);
+            manager.flags.is_loading = true;
+            let load_res = manager.load_index();
+
+            //Might need a NONE check idk
+            if load_res.is_err()
+                || manager
+                    .index
+                    .lock()
+                    .unwrap()
+                    .last_sync
+                    .unwrap()
+                    .elapsed()
+                    .unwrap_or(Duration::from_secs(0))
+                    > Duration::from_secs(60 * 60 * 24 * 5)
+            {
                 manager
                     .build_index(&home, IndexOption::Recursive)
                     .unwrap_or(());
-            });
-            manager.is_loading = false;
+            }
+
+            manager.flags.is_loading = false;
         }
 
         manager
@@ -165,9 +209,6 @@ impl Manager {
         }
     }
 
-    // TODO: Search results should be stored in a HashSet, because multiple search processes might
-    // add the same items
-
     /// Starts the search process. First calling cache_search(), index_search() then fallback_search()
     pub fn perform_search(
         &mut self,
@@ -188,7 +229,7 @@ impl Manager {
         items.lock().unwrap().clear();
 
         // TODO: split term into filename and extension
-        *self.is_searching.lock().unwrap() = true;
+        *self.flags.is_searching.lock().unwrap() = true;
         self.cache_search();
 
         self.index_search(term, &items);
@@ -203,7 +244,7 @@ impl Manager {
 
     ///Searches the indexed files and directorioes of the manager
     fn index_search(&mut self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
-        if let Some(res) = self.index.lock().unwrap().get(term) {
+        if let Some(res) = self.index.lock().unwrap().index.get(term) {
             let mut items = items.lock().unwrap();
 
             res.iter().for_each(|item| {
@@ -215,7 +256,7 @@ impl Manager {
 
     ///performs a recursive, multithreadded search traversing from the current direcoty
     fn fallback_search(&self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
-        let is_searching_arc = Arc::clone(&self.is_searching);
+        let is_searching_arc = Arc::clone(&self.flags.is_searching);
         let items = Arc::clone(&items);
         let term = term.to_string();
         let path = self.current.clone();
@@ -268,15 +309,15 @@ impl Manager {
     }
 
     pub fn is_searching(&self) -> bool {
-        *self.is_searching.lock().unwrap()
+        *self.flags.is_searching.lock().unwrap()
     }
 
     pub fn is_indexing(&self) -> bool {
-        *self.is_indexing.lock().unwrap()
+        *self.flags.is_indexing.lock().unwrap()
     }
 
     pub fn is_loading(&self) -> bool {
-        self.is_loading
+        self.flags.is_loading
     }
 
     pub fn step_back(&mut self) -> Result<usize, ManagerError> {
@@ -314,7 +355,7 @@ impl Manager {
     pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
         let index = Arc::clone(&self.index);
         let index2 = Arc::clone(&self.index);
-        let is_indexing = Arc::clone(&self.is_indexing);
+        let is_indexing = Arc::clone(&self.flags.is_indexing);
         let dir = dir.clone();
 
         std::thread::spawn(move || {
@@ -329,11 +370,11 @@ impl Manager {
     /// Builds the index for the manager. Simple -> directory provided. Recursive -> recursive from
     /// directory provided
     fn index_recursion(
-        index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
+        index: Arc<Mutex<Index>>,
         dir: &PathBuf,
         option: IndexOption,
     ) -> Result<(), ManagerError> {
-        if index.lock().unwrap().len() > 10000 {
+        if index.lock().unwrap().index.len() > 10000 {
             return Ok(());
         }
         let entry_it = fs::read_dir(dir);
@@ -356,6 +397,7 @@ impl Manager {
                 index
                     .lock()
                     .unwrap()
+                    .index
                     .entry(name.to_string_lossy().to_string())
                     .and_modify(|paths| {
                         paths.insert(path.to_path_buf());
@@ -376,20 +418,23 @@ impl Manager {
         Ok(())
     }
 
-    pub fn save_index(
-        index: Arc<Mutex<HashMap<String, HashSet<PathBuf>>>>,
-    ) -> Result<(), Box<dyn Error>> {
+    pub fn save_index(index: Arc<Mutex<Index>>) -> Result<(), Box<dyn Error>> {
         fs::create_dir_all("index/").unwrap();
-        let file = fs::File::create("index/index.json")?;
-        let index = index.lock().unwrap();
+        let file1 = fs::File::create("index/index.json")?;
+        let file2 = fs::File::create("index/last_sync.json")?;
+        let index = &index.lock().unwrap();
 
-        serde_json::to_writer(file, &*index)?;
+        serde_json::to_writer(file1, &index.index)?;
+        serde_json::to_writer(file2, &index.last_sync.unwrap_or(SystemTime::now()))?;
         Ok(())
     }
 
     pub fn load_index(&mut self) -> Result<(), Box<dyn Error>> {
         let file = fs::read_to_string("index/index.json")?;
         let mut index: HashMap<String, HashSet<PathBuf>> = serde_json::from_str(&file)?;
+        let file = fs::read_to_string("index/last_sync.json")?;
+        let last_sync: SystemTime = serde_json::from_str(&file)?;
+
         index.iter_mut().for_each(|(_, value)| {
             value.retain(|path| {
                 let metadata = path.metadata();
@@ -405,7 +450,12 @@ impl Manager {
                 path.exists() && valid
             });
         });
-        *self.index.lock().unwrap() = index;
+
+        let mut idx_lock = self.index.lock().unwrap();
+        idx_lock.index = index;
+        idx_lock.last_sync = Some(last_sync);
+        drop(idx_lock);
+
         Ok(())
     }
 }
