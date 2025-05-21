@@ -82,8 +82,6 @@ pub struct UI<'a> {
 }
 
 impl<'a> UI<'a> {
-    pub fn goon(&mut self) {}
-
     pub fn new(app_props: &AppProperties) -> Self {
         let mut ui = Self { list: None };
         ui.set_main_items(app_props);
@@ -103,6 +101,7 @@ impl<'a> UI<'a> {
         self.generate_statusbar(app_props, frame, footer[0]);
         self.generate_main_view(app_props, frame, chunks[1]);
         self.generate_preview(app_props, frame, chunks[2]);
+        self.generate_gigachad(app_props, frame, chunks[0]);
         self.generate_searchbar(app_props, frame, header[0]);
     }
 
@@ -408,5 +407,51 @@ impl<'a> UI<'a> {
             .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
             .scroll_padding(5);
         Some(list)
+    }
+
+    fn generate_gigachad(&self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
+        let symbol = " 
+                      ‚             
+                  ‘    ‹’           
+                 r      v           
+                *ª      )>          
+                “=  ·‘  r—          
+                 í*`ï&°vj           
+                  ÷>YMAï            
+                    uN‡             
+                    ¤ë$             
+                    r5¾%            
+                    í©°w–           
+                    c¥›­©¸          
+                    Ißú``uª         
+                    =ÏIv``¦J        
+                    [%` ¸`´`›|      
+                   Ì¶èä‚            
+                  ¼C©L¸%î           
+                 ;¡ ‡ƒ              
+                 ›  î9              
+                    %âY             
+                    c&µ½            
+                    <J`^j           
+                    =Ï` ´`¦         
+                    cÒ®˜            
+                    ì¼´7(           
+                    >=              
+                   ¢ý¢              
+                 cì;Ìò´7v           
+                r^`´[>``•J          
+                %´  “   `¼          
+                ‚        î          
+                         ›          
+                              
+                                      ";
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(format!(" ꑀꋖꁝꑀꌅꃔꌈꂵ ",))
+            .title_alignment(ratatui::layout::Alignment::Center)
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .fg(app_props.get_theme().get_fg());
+        let p = Paragraph::new(symbol).style(Style::default()).block(block);
+        frame.render_widget(p, area);
     }
 }
