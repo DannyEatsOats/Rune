@@ -70,6 +70,42 @@ macro_rules! impl_byte_readable {
 
 impl_byte_readable!(u8, u16, u32, u64, usize, i32, i64, f32, f64);
 
+const SYMBOL: &str = " 
+      ‚             
+  ‘    ‹’           
+ r      v           
+*ª      )>          
+“=  ·‘  r—          
+ í*`ï&°vj           
+  ÷>YMAï            
+    uN‡             
+    ¤ë$             
+    r5¾%            
+    í©°w–           
+    c¥›­©¸          
+    Ißú``uª         
+    =ÏIv``¦J        
+    [%` ¸`´`›|      
+   Ì¶èä‚            
+  ¼C©L¸%î           
+ ;¡ ‡ƒ              
+ ›  î9              
+    %âY             
+    c&µ½            
+    <J`^j           
+    =Ï` ´`¦         
+    cÒ®˜            
+    ì¼´7(           
+    >=              
+   ¢ý¢              
+ cì;Ìò´7v           
+r^`´[>``•J          
+%´  “   `¼          
+‚        î          
+         ›          
+                              
+                                      ";
+
 //A major problem here, is that since the ui is updated every frame, there are a bunch of
 //operations that will run on every frame that should be saved or cached. On big datasets, this
 //causes UI lags and performance issues.
@@ -79,11 +115,19 @@ impl_byte_readable!(u8, u16, u32, u64, usize, i32, i64, f32, f64);
 //data)
 pub struct UI<'a> {
     list: Option<Vec<Line<'a>>>,
+    width: u16,
+    height: u16,
+    symbol: String,
 }
 
 impl<'a> UI<'a> {
     pub fn new(app_props: &AppProperties) -> Self {
-        let mut ui = Self { list: None };
+        let mut ui = Self {
+            list: None,
+            width: 0,
+            height: 0,
+            symbol: String::from(SYMBOL),
+        };
         ui.set_main_items(app_props);
 
         ui
@@ -409,49 +453,48 @@ impl<'a> UI<'a> {
         Some(list)
     }
 
-    fn generate_gigachad(&self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
-        let symbol = " 
-                      ‚             
-                  ‘    ‹’           
-                 r      v           
-                *ª      )>          
-                “=  ·‘  r—          
-                 í*`ï&°vj           
-                  ÷>YMAï            
-                    uN‡             
-                    ¤ë$             
-                    r5¾%            
-                    í©°w–           
-                    c¥›­©¸          
-                    Ißú``uª         
-                    =ÏIv``¦J        
-                    [%` ¸`´`›|      
-                   Ì¶èä‚            
-                  ¼C©L¸%î           
-                 ;¡ ‡ƒ              
-                 ›  î9              
-                    %âY             
-                    c&µ½            
-                    <J`^j           
-                    =Ï` ´`¦         
-                    cÒ®˜            
-                    ì¼´7(           
-                    >=              
-                   ¢ý¢              
-                 cì;Ìò´7v           
-                r^`´[>``•J          
-                %´  “   `¼          
-                ‚        î          
-                         ›          
-                              
-                                      ";
+    fn generate_gigachad(&mut self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .title(format!(" ꑀꋖꁝꑀꌅꃔꌈꂵ ",))
             .title_alignment(ratatui::layout::Alignment::Center)
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
-        let p = Paragraph::new(symbol).style(Style::default()).block(block);
+
+        if self.width == frame.area().width && self.height == frame.area().height {
+            let p = Paragraph::new(self.symbol.clone())
+                .style(Style::default())
+                .block(block);
+            frame.render_widget(p, area);
+            return;
+        }
+
+        self.width = frame.area().width;
+
+        let space_x: usize = ((area.width - 14) / 2) as usize;
+        self.symbol = SYMBOL
+            .lines()
+            .map(|l| format!("{}{}", " ".repeat(space_x), l))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        let p = Paragraph::new(self.symbol.clone())
+            .style(Style::default())
+            .block(block);
         frame.render_widget(p, area);
+
+        /*
+                if self.height != frame.area().height {
+                    self.height = frame.area().height;
+
+                    let space_y: usize = ((area.height - 32) / 2) as usize;
+                    self.symbol = String::from("\n".repeat(space_y)) + SYMBOL;
+
+                    let p = Paragraph::new(self.symbol.clone())
+                        .style(Style::default())
+                        .block(block);
+                    frame.render_widget(p, area);
+                }
+        */
     }
 }
