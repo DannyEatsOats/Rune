@@ -43,6 +43,11 @@ impl<'a> App<'a> {
                 if let Event::Key(key) = crossterm::event::read()? {
                     app.handle_key_event(&key)?;
                 }
+                //Makes sure cursor is set when searching, as there is no movement event to trigger
+                //this
+                if app.properties.manager.is_searching() {
+                    app.generate_cursor(0);
+                }
             }
         }
 

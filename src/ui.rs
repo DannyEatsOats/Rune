@@ -145,7 +145,7 @@ impl<'a> UI<'a> {
         self.generate_statusbar(app_props, frame, footer[0]);
         self.generate_main_view(app_props, frame, chunks[1]);
         self.generate_preview(app_props, frame, chunks[2]);
-        self.generate_gigachad(app_props, frame, chunks[0]);
+        self.generate_symbol(app_props, frame, chunks[0]);
         self.generate_searchbar(app_props, frame, header[0]);
     }
 
@@ -453,7 +453,7 @@ impl<'a> UI<'a> {
         Some(list)
     }
 
-    fn generate_gigachad(&mut self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
+    fn generate_symbol(&mut self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
             .title(format!(" ꑀꋖꁝꑀꌅꃔꌈꂵ ",))
