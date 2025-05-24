@@ -60,6 +60,9 @@ impl<'a> App<'a> {
             self.handle_normal_mode(&key_event);
         } else if self.properties.mode == AppMode::Search && key_event.kind == KeyEventKind::Press {
             self.handle_search_mode(key_event);
+        } else if self.properties.mode == AppMode::Navigate && key_event.kind == KeyEventKind::Press
+        {
+            self.handle_nav_mode(key_event);
         }
 
         Ok(())
@@ -119,6 +122,9 @@ impl<'a> App<'a> {
             KeyCode::Char('?') => {
                 self.properties.mode = AppMode::Search;
             }
+            KeyCode::Char(':') => {
+                self.properties.mode = AppMode::Navigate;
+            }
             _ => {}
         }
     }
@@ -133,12 +139,26 @@ impl<'a> App<'a> {
                         .handle(input::InputType::DeletePrevWord);
                 }
             }
-            _ => self.handle_skey_code(key_event),
+            _ => self.handle_searchkey_code(key_event),
+        }
+    }
+
+    /// Handles navigation mode keyevents, modifiers
+    fn handle_nav_mode(&mut self, key_event: &KeyEvent) {
+        match key_event.modifiers {
+            KeyModifiers::CONTROL => {
+                if let KeyCode::Char('h') = key_event.code {
+                    self.properties
+                        .nav_input
+                        .handle(input::InputType::DeletePrevWord);
+                }
+            }
+            _ => self.handle_navkey_code(key_event),
         }
     }
 
     /// Handles search mode keycodes (regular keys without modifiers)
-    fn handle_skey_code(&mut self, key_event: &KeyEvent) {
+    fn handle_searchkey_code(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Enter => {
                 if !self.properties.manager.is_searching() {
@@ -153,6 +173,7 @@ impl<'a> App<'a> {
                             self.properties.main_list_state.selected().unwrap_or(0),
                         )
                         .unwrap();
+                    self.properties.search_input.clear();
                     self.properties.mode = AppMode::Normal;
                 }
             }
@@ -166,6 +187,33 @@ impl<'a> App<'a> {
             KeyCode::Char(c) => {
                 self.properties
                     .search_input
+                    .handle(input::InputType::AppendChar(c));
+            }
+            _ => {}
+        }
+    }
+
+    /// Handles navigation mode keycodes (regular keys without modifiers)
+    fn handle_navkey_code(&mut self, key_event: &KeyEvent) {
+        match key_event.code {
+            KeyCode::Enter => {
+                if !self.properties.manager.is_searching() {
+                    let term = self.properties.nav_input.get_value();
+                    self.change_dir(PathBuf::from(term));
+                    self.properties.nav_input.clear();
+                    self.properties.mode = AppMode::Normal;
+                }
+            }
+            KeyCode::Esc => {
+                self.properties.mode = AppMode::Normal;
+            }
+            KeyCode::Backspace => self
+                .properties
+                .nav_input
+                .handle(input::InputType::DeleteChar),
+            KeyCode::Char(c) => {
+                self.properties
+                    .nav_input
                     .handle(input::InputType::AppendChar(c));
             }
             _ => {}

@@ -147,6 +147,7 @@ impl<'a> UI<'a> {
         self.generate_preview(app_props, frame, chunks[2]);
         self.generate_symbol(app_props, frame, chunks[0]);
         self.generate_searchbar(app_props, frame, header[0]);
+        self.generate_navbar(app_props, frame, header[1]);
     }
 
     /// Sets the items for the main screen, called by app when changing directories
@@ -258,6 +259,29 @@ impl<'a> UI<'a> {
             app_props.search_input.get_value().clone() + "|"
         } else {
             app_props.search_input.get_value().clone()
+        };
+        let input = Text::from(val);
+        let input = Paragraph::new(input).block(block);
+
+        frame.render_widget(input, area);
+    }
+
+    pub fn generate_navbar(
+        &mut self,
+        app_props: &mut AppProperties,
+        frame: &mut Frame,
+        area: Rect,
+    ) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(String::from(" Change Directory "))
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .fg(app_props.get_theme().get_fg());
+
+        let val = if app_props.get_mode().eq(&AppMode::Navigate) {
+            app_props.nav_input.get_value().clone() + "|"
+        } else {
+            app_props.nav_input.get_value().clone()
         };
         let input = Text::from(val);
         let input = Paragraph::new(input).block(block);
@@ -386,6 +410,10 @@ impl<'a> UI<'a> {
                 Style::default().fg(app_props.get_theme().get_bg()),
             ),
             AppMode::Search => Span::styled(
+                mode.to_string(),
+                Style::default().fg(app_props.get_theme().get_ht()),
+            ),
+            AppMode::Navigate => Span::styled(
                 mode.to_string(),
                 Style::default().fg(app_props.get_theme().get_ht()),
             ),

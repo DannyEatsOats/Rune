@@ -19,6 +19,7 @@ pub enum AppMode {
     Normal,
     Edit,
     Search,
+    Navigate,
     Compare,
 }
 
@@ -28,6 +29,7 @@ impl Display for AppMode {
             AppMode::Normal => write!(f, "Normal"),
             AppMode::Edit => write!(f, "Edit"),
             AppMode::Search => write!(f, "Search"),
+            AppMode::Navigate => write!(f, "Navigate"),
             AppMode::Compare => write!(f, "Compare"),
         }
     }
@@ -42,6 +44,7 @@ pub struct AppProperties {
     pub current_theme: usize,
     pub main_list_state: ListState,
     pub search_input: input::Input,
+    pub nav_input: input::Input,
     pub cursor: (Option<PathBuf>, Option<Metadata>),
 }
 
@@ -68,6 +71,7 @@ impl AppProperties {
             current_theme: 1,
             main_list_state: ListState::default(),
             search_input: input::Input::new(),
+            nav_input: input::Input::new(),
             cursor,
         };
         props.main_list_state.select(Some(0));

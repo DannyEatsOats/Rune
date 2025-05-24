@@ -32,8 +32,8 @@ pub fn main_layout(frame: &mut Frame) -> Rc<[Rect]> {
 pub fn header_layout(frame: &mut Frame) -> Rc<[Rect]> {
     let vertical_chunks = main_vertical_layot(frame);
     Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(100)])
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(vertical_chunks[0])
 }
 

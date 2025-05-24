@@ -1,4 +1,5 @@
 use ratatui::style::Color;
+use serde::de::value;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InputType {
@@ -43,6 +44,10 @@ impl Input {
 
     pub fn set_color(&mut self, color: Color) {
         self.color = color;
+    }
+
+    pub fn clear(&mut self) {
+        self.value.clear();
     }
 
     fn append(&mut self, c: char) {
