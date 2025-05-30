@@ -1,3 +1,8 @@
+use std::{
+    error::Error,
+    path::{Path, PathBuf},
+};
+
 use ratatui::style::Color;
 use serde::de::value;
 
@@ -36,7 +41,7 @@ impl Input {
             InputType::DeleteNextWord => todo!(),
             InputType::GoToPrevWord => todo!(),
             InputType::GoToNextWord => todo!(),
-            InputType::AutoComplete => todo!(),
+            InputType::AutoComplete => self.auto_complete().unwrap_or(()),
         }
     }
 
@@ -68,5 +73,29 @@ impl Input {
                 break;
             }
         }
+    }
+
+    fn auto_complete(&mut self) -> std::io::Result<()> {
+        let term = PathBuf::from(&self.value);
+        let mut items = Vec::new();
+
+        //Needs to read current dir from the manager, or term if it is not relative
+        for entry in std::fs::read_dir(&term)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if !path.is_dir() {
+                continue;
+            }
+
+            if path.file_name().is_some() {
+                let name = path.file_name().unwrap().to_string_lossy().to_string();
+                items.push(name);
+            }
+        }
+
+        items.sort();
+
+        Ok(())
     }
 }
