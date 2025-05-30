@@ -353,6 +353,7 @@ impl Manager {
     /// Public function for building the index. Spawns a thread so the building can run in the
     /// background. Calls Manager::index_recursion
     pub fn build_index(&self, dir: &PathBuf, option: IndexOption) -> Result<(), ManagerError> {
+        self.index.lock().unwrap().last_sync = Some(SystemTime::now());
         let index = Arc::clone(&self.index);
         let index2 = Arc::clone(&self.index);
         let is_indexing = Arc::clone(&self.flags.is_indexing);

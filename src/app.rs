@@ -211,6 +211,10 @@ impl<'a> App<'a> {
                 .properties
                 .nav_input
                 .handle(input::InputType::DeleteChar),
+            KeyCode::Tab => self
+                .properties
+                .nav_input
+                .handle(input::InputType::AutoComplete),
             KeyCode::Char(c) => {
                 self.properties
                     .nav_input

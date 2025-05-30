@@ -10,6 +10,7 @@ pub enum InputType {
     DeleteNextWord,
     GoToPrevWord,
     GoToNextWord,
+    AutoComplete,
 }
 
 #[derive(Debug)]
@@ -35,6 +36,7 @@ impl Input {
             InputType::DeleteNextWord => todo!(),
             InputType::GoToPrevWord => todo!(),
             InputType::GoToNextWord => todo!(),
+            InputType::AutoComplete => todo!(),
         }
     }
 
