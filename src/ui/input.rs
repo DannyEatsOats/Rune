@@ -76,10 +76,16 @@ impl Input {
     }
 
     fn auto_complete(&mut self) -> std::io::Result<()> {
-        let term = PathBuf::from(&self.value);
+        let term = &self.value;
         let mut items = Vec::new();
+        let mut split = term.split("/");
+        split.next();
 
         //Needs to read current dir from the manager, or term if it is not relative
+        //Absolute -> starts with '/'
+        //Relative -> chain term to current path, and filter paths starting with this
+        //            then find longest common prefix, and add that to 'self.value'.
+        //            if prefix len == self.value len. then add /. repeat
         for entry in std::fs::read_dir(&term)? {
             let entry = entry?;
             let path = entry.path();
@@ -90,7 +96,9 @@ impl Input {
 
             if path.file_name().is_some() {
                 let name = path.file_name().unwrap().to_string_lossy().to_string();
-                items.push(name);
+                if name.starts_with(term) {
+                    items.push(name);
+                }
             }
         }
 
