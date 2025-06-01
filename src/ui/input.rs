@@ -77,16 +77,20 @@ impl Input {
 
     fn auto_complete(&mut self, base_path: &mut PathBuf) -> std::io::Result<()> {
         let term = &self.value;
-        //let mut items = Vec::new();
-        let mut split = term.split("/");
-        split.next();
+        let mut items = Vec::new();
+        let split: Vec<&str> = term.split("/").collect();
+
+        for i in 0..split.len() - 1 {
+            base_path.push(split[i]);
+        }
+        //println!("{base_path:?}");
 
         //Needs to read current dir from the manager, or term if it is not relative
         //Absolute -> starts with '/'
         //Relative -> chain term to current path, and filter paths starting with this
         //            then find longest common prefix, and add that to 'self.value'.
         //            if prefix len == self.value len. then add /. repeat
-        base_path.push(term);
+
         for entry in std::fs::read_dir(&base_path)? {
             let entry = entry?;
             let path = entry.path();
@@ -95,14 +99,32 @@ impl Input {
                 continue;
             }
 
-            println!("{base_path:?}");
-            let path = path.to_string_lossy().to_string();
-            if path.starts_with(base_path) {
-                items.push(name);
+            if path.file_name().is_some() {
+                let name = path.file_name().unwrap().to_string_lossy().to_string();
+
+                if name.starts_with(&split[split.len() - 1]) {
+                    items.push(name);
+                }
             }
         }
 
-        //items.sort();
+        items.sort();
+        //println!("{:?}", items);
+
+        if items.is_empty() {
+            return Ok(());
+        }
+
+        if items.len() == 1 {
+            self.value = items.remove(0) + "/";
+            return Ok(());
+        }
+
+        //Longest Common Prefix
+        let n = items.first().unwrap().len();
+        let mut prefix = String::new();
+
+        //for
 
         Ok(())
     }
