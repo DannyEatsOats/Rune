@@ -86,9 +86,6 @@ impl Input {
 
         //Needs to read current dir from the manager, or term if it is not relative
         //Absolute -> starts with '/'
-        //Relative -> chain term to current path, and filter paths starting with this
-        //            then find longest common prefix, and add that to 'self.value'.
-        //            if prefix len == self.value len. then add /. repeat
 
         for entry in std::fs::read_dir(&base_path)? {
             let entry = entry?;
@@ -107,8 +104,6 @@ impl Input {
             }
         }
 
-        items.sort();
-
         if items.is_empty() {
             return Ok(());
         }
@@ -126,10 +121,26 @@ impl Input {
         }
 
         //Longest Common Prefix
-        let n = items.first().unwrap().len();
+        items.sort();
+        let first = items.first().unwrap();
+        let last = items.last().unwrap();
         let mut prefix = String::new();
 
-        //for
+        for (ch1, ch2) in first.chars().zip(last.chars()) {
+            if ch1 == ch2 {
+                prefix.push(ch1);
+            } else {
+                break;
+            }
+        }
+
+        let mut val = String::new();
+        for i in 0..split.len() - 1 {
+            val.push_str(split[i]);
+            val.push_str("/");
+        }
+        val.push_str(&prefix);
+        self.value = val;
 
         Ok(())
     }

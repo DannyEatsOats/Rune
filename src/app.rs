@@ -164,6 +164,9 @@ impl<'a> App<'a> {
                 if !self.properties.manager.is_searching() {
                     let items = Arc::clone(&self.properties.items);
                     let term = self.properties.search_input.get_value();
+                    if term.is_empty() {
+                        return;
+                    }
                     // PANICS! on empty input
                     self.properties
                         .manager
