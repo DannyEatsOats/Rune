@@ -15,7 +15,7 @@ pub enum InputType {
     DeleteNextWord,
     GoToPrevWord,
     GoToNextWord,
-    AutoComplete,
+    AutoComplete(PathBuf),
 }
 
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl Input {
             InputType::DeleteNextWord => todo!(),
             InputType::GoToPrevWord => todo!(),
             InputType::GoToNextWord => todo!(),
-            InputType::AutoComplete => self.auto_complete().unwrap_or(()),
+            InputType::AutoComplete(mut path) => self.auto_complete(&mut path).unwrap_or(()),
         }
     }
 
@@ -75,9 +75,9 @@ impl Input {
         }
     }
 
-    fn auto_complete(&mut self) -> std::io::Result<()> {
+    fn auto_complete(&mut self, base_path: &mut PathBuf) -> std::io::Result<()> {
         let term = &self.value;
-        let mut items = Vec::new();
+        //let mut items = Vec::new();
         let mut split = term.split("/");
         split.next();
 
@@ -86,7 +86,8 @@ impl Input {
         //Relative -> chain term to current path, and filter paths starting with this
         //            then find longest common prefix, and add that to 'self.value'.
         //            if prefix len == self.value len. then add /. repeat
-        for entry in std::fs::read_dir(&term)? {
+        base_path.push(term);
+        for entry in std::fs::read_dir(&base_path)? {
             let entry = entry?;
             let path = entry.path();
 
@@ -94,15 +95,14 @@ impl Input {
                 continue;
             }
 
-            if path.file_name().is_some() {
-                let name = path.file_name().unwrap().to_string_lossy().to_string();
-                if name.starts_with(term) {
-                    items.push(name);
-                }
+            println!("{base_path:?}");
+            let path = path.to_string_lossy().to_string();
+            if path.starts_with(base_path) {
+                items.push(name);
             }
         }
 
-        items.sort();
+        //items.sort();
 
         Ok(())
     }

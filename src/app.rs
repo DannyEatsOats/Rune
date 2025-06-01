@@ -214,7 +214,9 @@ impl<'a> App<'a> {
             KeyCode::Tab => self
                 .properties
                 .nav_input
-                .handle(input::InputType::AutoComplete),
+                .handle(input::InputType::AutoComplete(
+                    self.properties.get_current_path().clone(),
+                )),
             KeyCode::Char(c) => {
                 self.properties
                     .nav_input
