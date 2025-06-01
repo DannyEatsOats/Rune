@@ -69,21 +69,20 @@ impl Input {
         while !self.value.is_empty() {
             let last_char = self.value.bytes().last().unwrap();
             self.value.pop();
-            if last_char == b' ' {
+            if last_char == b' ' || last_char == b'/' {
                 break;
             }
         }
     }
 
     fn auto_complete(&mut self, base_path: &mut PathBuf) -> std::io::Result<()> {
-        let term = &self.value;
+        let term = self.value.clone();
         let mut items = Vec::new();
         let split: Vec<&str> = term.split("/").collect();
 
         for i in 0..split.len() - 1 {
             base_path.push(split[i]);
         }
-        //println!("{base_path:?}");
 
         //Needs to read current dir from the manager, or term if it is not relative
         //Absolute -> starts with '/'
@@ -109,14 +108,20 @@ impl Input {
         }
 
         items.sort();
-        //println!("{:?}", items);
 
         if items.is_empty() {
             return Ok(());
         }
 
         if items.len() == 1 {
-            self.value = items.remove(0) + "/";
+            let mut val = String::new();
+            for i in 0..split.len() - 1 {
+                val.push_str(split[i]);
+                val.push_str("/");
+            }
+            val.push_str(&(items.remove(0) + "/"));
+            self.value = val;
+
             return Ok(());
         }
 

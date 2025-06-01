@@ -199,7 +199,13 @@ impl<'a> App<'a> {
             KeyCode::Enter => {
                 if !self.properties.manager.is_searching() {
                     let term = self.properties.nav_input.get_value();
-                    self.change_dir(PathBuf::from(term));
+                    let mut path = PathBuf::from(term);
+                    if !path.exists() {
+                        let mut val = self.properties.get_current_path().clone();
+                        val.push(path);
+                        path = val;
+                    }
+                    self.change_dir(path);
                     self.properties.nav_input.clear();
                     self.properties.mode = AppMode::Normal;
                 }
