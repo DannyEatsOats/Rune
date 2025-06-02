@@ -80,12 +80,15 @@ impl Input {
         let mut items = Vec::new();
         let split: Vec<&str> = term.split("/").collect();
 
+        let mut base_path = if term.starts_with("/") {
+            &mut PathBuf::from("/")
+        } else {
+            base_path
+        };
+
         for i in 0..split.len() - 1 {
             base_path.push(split[i]);
         }
-
-        //Needs to read current dir from the manager, or term if it is not relative
-        //Absolute -> starts with '/'
 
         for entry in std::fs::read_dir(&base_path)? {
             let entry = entry?;
@@ -144,4 +147,6 @@ impl Input {
 
         Ok(())
     }
+
+    fn relative_autocomplete(&mut self, base_path: &mut PathBuf) {}
 }
