@@ -276,8 +276,9 @@ impl Manager {
         let items = Arc::clone(&items);
         let term = term.to_string();
         let path = self.current.clone();
+        let search_flag = Arc::clone(&self.flags.is_searching);
         tokio::spawn(async move {
-            Manager::fallback_recursion(&term, path, items, Instant::now()).unwrap();
+            Manager::fallback_recursion(&term, path, items, search_flag, Instant::now()).unwrap();
             *is_searching_arc.lock().unwrap() = false;
         });
     }
@@ -287,9 +288,14 @@ impl Manager {
         term: &str,
         path: PathBuf,
         items: Arc<Mutex<Vec<PathBuf>>>,
+        is_searching: Arc<Mutex<bool>>,
         delta_time: Instant,
     ) -> Result<(), Box<dyn Error>> {
         if delta_time.elapsed() > Duration::from_secs(20) {
+            return Ok(());
+        }
+
+        if !*is_searching.lock().unwrap() {
             return Ok(());
         }
 
@@ -317,7 +323,14 @@ impl Manager {
             }
             if path.is_dir() {
                 let items = Arc::clone(&items);
-                Manager::fallback_recursion(term, path, items, delta_time).unwrap_or(());
+                Manager::fallback_recursion(
+                    term,
+                    path,
+                    items,
+                    Arc::clone(&is_searching),
+                    delta_time,
+                )
+                .unwrap_or(());
             }
         });
 
@@ -337,6 +350,7 @@ impl Manager {
     }
 
     pub fn step_back(&mut self) -> Result<usize, ManagerError> {
+        *self.flags.is_searching.lock().unwrap() = false;
         if let Some((prev, cursor_idx)) = self.pathstack.pop() {
             self.current = prev;
             return Ok(cursor_idx);
@@ -356,6 +370,8 @@ impl Manager {
         if !new_path.exists() || !new_path.is_dir() {
             return Err(ManagerError::InvalidPath);
         }
+
+        *self.flags.is_searching.lock().unwrap() = false;
 
         self.pathstack.push((self.current.clone(), cursor_idx));
         self.current = new_path;
