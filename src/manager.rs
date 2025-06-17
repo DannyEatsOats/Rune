@@ -1,5 +1,6 @@
 use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
+use std::env::vars;
 use std::error::Error;
 use std::io::{BufRead, Read};
 use std::path::PathBuf;
@@ -468,7 +469,7 @@ impl Manager {
         let file = fs::read_to_string("index/last_sync.json")?;
         let last_sync: SystemTime = serde_json::from_str(&file)?;
 
-        index.iter_mut().for_each(|(_, value)| {
+        index.retain(|_, value| {
             value.retain(|path| {
                 let metadata = path.metadata();
                 let mut valid = true;
@@ -478,10 +479,11 @@ impl Manager {
                         .elapsed()
                         .unwrap_or(Duration::from_secs(0))
                         .as_secs()
-                        < Duration::from_secs(60 * 60 * 24 * 30 * 12).as_secs(); //~1year
+                        < Duration::from_secs(60 * 60 * 24 * 30 * 3).as_secs();
                 }
                 path.exists() && valid
             });
+            !value.is_empty()
         });
 
         let mut idx_lock = self.index.lock().unwrap();
