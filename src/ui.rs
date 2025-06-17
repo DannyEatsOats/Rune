@@ -297,6 +297,7 @@ impl<'a> UI<'a> {
         frame.render_widget(input, area);
     }
 
+    //TODO: For some reason the preview starts flashing during search
     fn generate_preview(&mut self, app_props: &mut AppProperties, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
