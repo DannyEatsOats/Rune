@@ -2,7 +2,7 @@ use core::str;
 use std::{path::PathBuf, time::SystemTime, usize};
 
 use crate::{
-    app::*,
+    app::{self, *},
     app_properties::{self, AppMode, AppProperties},
     manager::OpenOption,
 };
@@ -298,7 +298,6 @@ impl<'a> UI<'a> {
     }
 
     fn generate_preview(&mut self, app_props: &mut AppProperties, frame: &mut Frame, area: Rect) {
-        let idx = app_props.get_ml_state().selected().unwrap_or(0);
         let block = Block::default()
             .borders(Borders::ALL)
             .title(format!(" Preview ",))

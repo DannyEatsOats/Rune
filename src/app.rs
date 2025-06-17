@@ -45,9 +45,6 @@ impl<'a> App<'a> {
                 }
                 //Makes sure cursor is set when searching, as there is no movement event to trigger
                 //this
-                if app.properties.manager.is_searching() {
-                    app.generate_cursor(0);
-                }
             }
         }
 
@@ -279,6 +276,7 @@ impl<'a> App<'a> {
                 metadata = Some(md);
             }
         }
+
         self.properties.cursor = (path, metadata);
     }
 

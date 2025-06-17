@@ -228,7 +228,6 @@ impl Manager {
         self.pathstack.push((self.current.clone(), cursor_idx));
         items.lock().unwrap().clear();
 
-        // TODO: split term into filename and extension
         *self.flags.is_searching.lock().unwrap() = true;
         self.cache_search();
 
@@ -244,11 +243,28 @@ impl Manager {
 
     ///Searches the indexed files and directorioes of the manager
     fn index_search(&mut self, term: &str, items: &Arc<Mutex<Vec<PathBuf>>>) {
-        if let Some(res) = self.index.lock().unwrap().index.get(term) {
+        let split: Vec<&str> = term.split(".").collect();
+        let mut filename = String::from(split[0]);
+        for i in 1..split.len() - 1 {
+            filename.push_str(&format!(".{}", split[i]));
+        }
+        let extension = if split.len() > 1 {
+            Some(split.last().unwrap())
+        } else {
+            None
+        };
+
+        if let Some(res) = self.index.lock().unwrap().index.get(&filename) {
             let mut items = items.lock().unwrap();
 
             res.iter().for_each(|item| {
-                items.push(item.clone());
+                if extension.is_none()
+                    || (extension.is_some()
+                        && item.extension().is_some()
+                        && extension.unwrap() == &item.extension().unwrap().to_str().unwrap())
+                {
+                    items.push(item.clone());
+                }
             });
             drop(items);
         }
