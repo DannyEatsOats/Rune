@@ -235,10 +235,18 @@ impl<'a> UI<'a> {
             }
             frame.render_stateful_widget(list.clone(), areas[1], app_props.get_ml_state());
         } else {
-            let empty_text = Paragraph::new("Directory Empty :(")
-                .style(Style::default().fg(app_props.get_theme().get_pr()))
-                .centered()
-                .block(block);
+            let empty_text = if app_props.manager.is_searching() {
+                Paragraph::new("Searching...")
+                    .style(Style::default().fg(app_props.get_theme().get_pr()))
+                    .centered()
+                    .block(block)
+            } else {
+                Paragraph::new("Directory Empty :(")
+                    .style(Style::default().fg(app_props.get_theme().get_pr()))
+                    .centered()
+                    .block(block)
+            };
+
             frame.render_widget(empty_text, area);
         }
     }
@@ -299,7 +307,7 @@ impl<'a> UI<'a> {
             .fg(app_props.get_theme().get_fg());
 
         if let (None, _) = &app_props.cursor {
-            let empty_text = Paragraph::new("Directory Empty :(")
+            let empty_text = Paragraph::new("No Preview Available :(")
                 .style(Style::default().fg(app_props.get_theme().get_pr()))
                 .centered()
                 .block(block);
