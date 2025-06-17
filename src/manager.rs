@@ -478,7 +478,7 @@ impl Manager {
                         .elapsed()
                         .unwrap_or(Duration::from_secs(0))
                         .as_secs()
-                        < Duration::from_secs(60 * 60 * 24 * 30).as_secs();
+                        < Duration::from_secs(60 * 60 * 24 * 30 * 12).as_secs(); //~1year
                 }
                 path.exists() && valid
             });
