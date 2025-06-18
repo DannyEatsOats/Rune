@@ -507,7 +507,7 @@ impl<'a> UI<'a> {
 
         self.width = frame.area().width;
 
-        let space_x: usize = ((area.width - 14) / 2) as usize;
+        let space_x: usize = ((area.width.saturating_sub(14)) / 2) as usize;
         self.symbol = SYMBOL
             .lines()
             .map(|l| format!("{}{}", " ".repeat(space_x), l))
