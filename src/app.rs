@@ -6,7 +6,7 @@ use std::{io, thread};
 use crossterm::event::*;
 use ratatui::{DefaultTerminal, widgets::*};
 
-use crate::app_properties::{AppMode, AppProperties};
+use crate::app_properties::{AppMode, AppProperties, EditAction};
 use crate::manager::{self, *};
 use crate::offset_buffer::{self, OffsetBuffer};
 use crate::ui::*;
@@ -60,6 +60,8 @@ impl<'a> App<'a> {
         } else if self.properties.mode == AppMode::Navigate && key_event.kind == KeyEventKind::Press
         {
             self.handle_nav_mode(key_event);
+        } else if key_event.kind == KeyEventKind::Press {
+            self.handle_edit_mode(key_event);
         }
 
         Ok(())
@@ -76,8 +78,14 @@ impl<'a> App<'a> {
             KeyCode::Down | KeyCode::Char('j') => {
                 if let Some(selected) = self.properties.main_list_state.selected() {
                     let offset = self.offset_buffer.get_offset();
-                    let next =
-                        (selected + offset).min(self.properties.items.lock().unwrap().len() - 1);
+                    let next = (selected + offset).min(
+                        self.properties
+                            .items
+                            .lock()
+                            .unwrap()
+                            .len()
+                            .saturating_sub(1),
+                    );
                     self.generate_cursor(next);
                     self.properties.main_list_state.select(Some(next));
                 }
@@ -122,6 +130,10 @@ impl<'a> App<'a> {
             KeyCode::Char(':') => {
                 self.properties.mode = AppMode::Navigate;
             }
+            KeyCode::Char('a') => self.properties.mode = AppMode::Edit(EditAction::Create),
+            KeyCode::Char('d') => self.properties.mode = AppMode::Edit(EditAction::Delete),
+            KeyCode::Char('r') => self.properties.mode = AppMode::Edit(EditAction::Rename),
+            KeyCode::Char('m') => self.properties.mode = AppMode::Edit(EditAction::Move),
             _ => {}
         }
     }
@@ -151,6 +163,15 @@ impl<'a> App<'a> {
                 }
             }
             _ => self.handle_navkey_code(key_event),
+        }
+    }
+
+    fn handle_edit_mode(&mut self, key_event: &KeyEvent) {
+        match key_event.code {
+            KeyCode::Esc => {
+                self.properties.mode = AppMode::Normal;
+            }
+            _ => {}
         }
     }
 

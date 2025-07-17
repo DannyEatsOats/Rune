@@ -17,17 +17,25 @@ use crate::{
 #[derive(PartialEq, Eq)]
 pub enum AppMode {
     Normal,
-    Edit,
+    Edit(EditAction),
     Search,
     Navigate,
     Compare,
+}
+
+#[derive(PartialEq, Eq)]
+pub enum EditAction {
+    Create,
+    Delete,
+    Rename,
+    Move,
 }
 
 impl Display for AppMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AppMode::Normal => write!(f, "Normal"),
-            AppMode::Edit => write!(f, "Edit"),
+            AppMode::Edit(_) => write!(f, "Edit"),
             AppMode::Search => write!(f, "Search"),
             AppMode::Navigate => write!(f, "Navigate"),
             AppMode::Compare => write!(f, "Compare"),

@@ -413,9 +413,9 @@ impl<'a> UI<'a> {
                 mode.to_string(),
                 Style::default().fg(app_props.get_theme().get_mt()),
             ),
-            AppMode::Edit => Span::styled(
+            AppMode::Edit(_) => Span::styled(
                 mode.to_string(),
-                Style::default().fg(app_props.get_theme().get_bg()),
+                Style::default().fg(app_props.get_theme().get_fg()),
             ),
             AppMode::Search => Span::styled(
                 mode.to_string(),
@@ -492,7 +492,7 @@ impl<'a> UI<'a> {
     fn generate_symbol(&mut self, app_props: &AppProperties, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(format!(" ꑀꋖꁝꑀꌅꃔꌈꂵ ",))
+            .title(format!(" ቹፕⶴቹዪቹልረ ",))
             .title_alignment(ratatui::layout::Alignment::Center)
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
