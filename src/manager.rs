@@ -338,6 +338,67 @@ impl Manager {
         Ok(())
     }
 
+    /// Creates a folder or a file in the current directory.
+    /// Filenames ending with "/" are considered folders.
+    ///
+    /// *file_name* is a '&str' because it is easier just to specify a name
+    /// and then let the function build the correct path based on the current directory.
+    pub fn create_fsitem(&self, file_name: &str) -> Result<(), String> {
+        let mut path = PathBuf::new();
+        path.push(&self.current);
+        path.push(file_name);
+
+        if file_name.ends_with('/') {
+            match fs::create_dir_all(&path) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.to_string()),
+            }
+        } else {
+            match fs::File::create_new(path) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.to_string()),
+            }
+        }
+    }
+
+    /// Deletes the file or folder specified.
+    /// Folders are deleted recursively., path.exists()
+    ///
+    /// This fn is the inverse of create_fsitem():
+    /// Here it is easier to specify a path (that you can get from an fsitem.get_path()).
+    /// This is less error prone, since the API keeps track of paths corresponding to an item.
+    pub fn delete_fsitem(&self, path: &PathBuf) -> Result<(), String> {
+        if path.is_dir() {
+            match fs::remove_dir_all(path) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.to_string()),
+            }
+        } else {
+            match fs::remove_file(path) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.to_string()),
+            }
+        }
+    }
+
+    /// Renames an item in the folder
+    pub fn rename_fsitem(&self, source: PathBuf, dest: &str) -> Result<(), String> {
+        let mut temp = source.clone();
+        temp.pop();
+        temp.push(dest);
+
+        /*
+                if temp.exists() {
+                    return Err(String::from("Item with same name already exists"));
+                }
+        */
+
+        match fs::rename(source, temp) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
     pub fn is_searching(&self) -> bool {
         *self.flags.is_searching.lock().unwrap()
     }

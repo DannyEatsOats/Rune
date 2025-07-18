@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::SystemTime, usize};
 
 use crate::{
     app::{self, *},
-    app_properties::{self, AppMode, AppProperties},
+    app_properties::{self, AppMode, AppProperties, EditAction},
     manager::OpenOption,
 };
 use chrono::{DateTime, Local};
@@ -431,10 +431,61 @@ impl<'a> UI<'a> {
             ),
         };
 
-        let space = (area.width as usize - 4).saturating_sub(mode.to_string().len() + text.len());
-        let space = Span::styled(" ".repeat(space), Style::default());
+        let mut space =
+            (area.width as usize - 4).saturating_sub(mode.to_string().len() + text.len());
 
-        let status_line = Line::from(vec![mode_span, space, perms_span]).style(Style::default());
+        let mut edit_span = None;
+        let mut input_text = String::new();
+
+        if let AppMode::Edit(x) = &mode {
+            match x {
+                EditAction::Create => {
+                    input_text.push_str("Create file: ");
+                }
+                EditAction::Rename => {
+                    if let (Some(path), _) = &app_props.cursor {
+                        let name = path.file_name().unwrap().to_string_lossy();
+                        input_text.push_str(&format!("Rename {} to: ", name));
+                    }
+                }
+                EditAction::Move => {
+                    input_text.push_str("Move x to: ");
+                }
+                EditAction::Delete => {
+                    input_text.push_str("[Confirm] to delete: ");
+                }
+            }
+
+            input_text.push_str(&app_props.edit_input.get_value());
+            edit_span = Some(Span::styled(
+                input_text.clone(),
+                Style::default().fg(app_props.get_theme().get_mt()),
+            ));
+            space /= 2;
+            space = space.saturating_sub(input_text.len() / 2);
+        }
+
+        let space1 = Span::styled(" ".repeat(space), Style::default());
+        if input_text.len() % 2 != 0 {
+            space -= 1;
+        }
+        if input_text.len() > 0 {
+            space += 1;
+        }
+        let space2 = Span::styled(" ".repeat(space), Style::default());
+
+        let status_line = if edit_span.is_some() {
+            Line::from(vec![
+                mode_span,
+                space1,
+                edit_span.unwrap(),
+                space2,
+                perms_span,
+            ])
+            .style(Style::default())
+        } else {
+            Line::from(vec![mode_span, space1, perms_span]).style(Style::default())
+        };
 
         let status_update = self.generate_status_update(app_props);
 

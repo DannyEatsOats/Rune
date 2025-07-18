@@ -14,7 +14,7 @@ use crate::{
 };
 
 /// A struct representing the modes the app can be in.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum AppMode {
     Normal,
     Edit(EditAction),
@@ -23,7 +23,7 @@ pub enum AppMode {
     Compare,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum EditAction {
     Create,
     Delete,
@@ -53,6 +53,7 @@ pub struct AppProperties {
     pub main_list_state: ListState,
     pub search_input: input::Input,
     pub nav_input: input::Input,
+    pub edit_input: input::Input,
     pub cursor: (Option<PathBuf>, Option<Metadata>),
 }
 
@@ -80,6 +81,7 @@ impl AppProperties {
             main_list_state: ListState::default(),
             search_input: input::Input::new(),
             nav_input: input::Input::new(),
+            edit_input: input::Input::new(),
             cursor,
         };
         props.main_list_state.select(Some(0));

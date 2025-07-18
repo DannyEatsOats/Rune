@@ -169,7 +169,93 @@ impl<'a> App<'a> {
     fn handle_edit_mode(&mut self, key_event: &KeyEvent) {
         match key_event.code {
             KeyCode::Esc => {
+                self.properties.edit_input.clear();
                 self.properties.mode = AppMode::Normal;
+            }
+            _ => {}
+        }
+
+        match &self.properties.mode {
+            AppMode::Edit(x) => match x {
+                EditAction::Create | EditAction::Move | EditAction::Rename => {
+                    match key_event.modifiers {
+                        KeyModifiers::CONTROL => {
+                            if let KeyCode::Char('h') = key_event.code {
+                                self.properties
+                                    .edit_input
+                                    .handle(input::InputType::DeletePrevWord);
+                            }
+                        }
+                        _ => self.handle_editkey_code(key_event, x.clone()),
+                    }
+                }
+                EditAction::Delete => {
+                    let idx = self.properties.main_list_state.selected();
+                    if let Some(idx) = idx {
+                        self.generate_cursor(idx);
+                        if key_event.code == KeyCode::Enter {
+                            if let (Some(path), _) = &self.properties.cursor {
+                                _ = self.properties.manager.delete_fsitem(path);
+                                self.change_dir(self.properties.manager.get_current_path().clone());
+                            }
+                            self.properties.mode = AppMode::Normal;
+                        }
+                    }
+                }
+            },
+            _ => {}
+        }
+    }
+
+    fn handle_editkey_code(&mut self, key_event: &KeyEvent, action: EditAction) {
+        match key_event.code {
+            KeyCode::Enter => {
+                let idx = self.properties.main_list_state.selected();
+                if let None = idx {
+                    return;
+                }
+                self.generate_cursor(idx.unwrap());
+                match action {
+                    EditAction::Create => {
+                        let new_item = self.properties.edit_input.get_value();
+                        _ = self.properties.manager.create_fsitem(&new_item);
+                        self.change_dir(self.properties.manager.get_current_path().clone());
+                    }
+                    EditAction::Rename => {
+                        if let (Some(path), _) = &self.properties.cursor {
+                            let source = path.clone();
+                            let dest = self.properties.edit_input.get_value();
+                            let res = self.properties.manager.rename_fsitem(source, dest);
+                            if res.is_err() {
+                                print!("{}", res.err().unwrap())
+                            }
+                            self.change_dir(self.properties.manager.get_current_path().clone());
+                        }
+                    }
+                    _ => {}
+                }
+
+                //Maybe i could implement jump to item here
+                self.properties.edit_input.clear();
+                self.properties.mode = AppMode::Normal;
+            }
+            KeyCode::Esc => {
+                self.properties.mode = AppMode::Normal;
+            }
+            KeyCode::Backspace => self
+                .properties
+                .edit_input
+                .handle(input::InputType::DeleteChar),
+            KeyCode::Tab => self
+                .properties
+                .edit_input
+                .handle(input::InputType::AutoComplete(
+                    self.properties.get_current_path().clone(),
+                )),
+            KeyCode::Char(c) => {
+                self.properties
+                    .edit_input
+                    .handle(input::InputType::AppendChar(c));
             }
             _ => {}
         }
