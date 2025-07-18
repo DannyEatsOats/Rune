@@ -445,17 +445,26 @@ impl<'a> UI<'a> {
                 EditAction::Rename => {
                     if let (Some(path), _) = &app_props.cursor {
                         let name = path.file_name().unwrap().to_string_lossy();
-                        input_text.push_str(&format!("[Confirm] Rename {} to: ", name));
+                        input_text.push_str(&format!("[Confirm] Rename [{}] to: ", name));
                     }
                 }
                 EditAction::Move => {
                     if let (Some(path), _) = &app_props.cursor {
                         let name = path.file_name().unwrap().to_string_lossy();
-                        input_text.push_str(&format!("[Confirm] Move {} to: ", name));
+                        input_text.push_str(&format!("[Confirm] Move [{}] to: ", name));
+                    }
+                }
+                EditAction::Copy => {
+                    if let (Some(path), _) = &app_props.cursor {
+                        let name = path.file_name().unwrap().to_string_lossy();
+                        input_text.push_str(&format!("[Confirm] Copy [{}] to: ", name));
                     }
                 }
                 EditAction::Delete => {
-                    input_text.push_str("[Confirm] to delete: ");
+                    if let (Some(path), _) = &app_props.cursor {
+                        let name = path.file_name().unwrap().to_string_lossy();
+                        input_text.push_str(&format!("[Confirm] Delete [{}]: ", name));
+                    }
                 }
             }
 

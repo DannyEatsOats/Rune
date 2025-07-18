@@ -134,6 +134,7 @@ impl<'a> App<'a> {
             KeyCode::Char('d') => self.properties.mode = AppMode::Edit(EditAction::Delete),
             KeyCode::Char('r') => self.properties.mode = AppMode::Edit(EditAction::Rename),
             KeyCode::Char('m') => self.properties.mode = AppMode::Edit(EditAction::Move),
+            KeyCode::Char('c') => self.properties.mode = AppMode::Edit(EditAction::Copy),
             _ => {}
         }
     }
@@ -177,7 +178,7 @@ impl<'a> App<'a> {
 
         match &self.properties.mode {
             AppMode::Edit(x) => match x {
-                EditAction::Create | EditAction::Move | EditAction::Rename => {
+                EditAction::Create | EditAction::Move | EditAction::Copy | EditAction::Rename => {
                     match key_event.modifiers {
                         KeyModifiers::CONTROL => {
                             if let KeyCode::Char('h') = key_event.code {
@@ -196,7 +197,6 @@ impl<'a> App<'a> {
                         if key_event.code == KeyCode::Enter {
                             if let (Some(path), _) = &self.properties.cursor {
                                 _ = self.properties.manager.delete_fsitem(path);
-                                self.change_dir(self.properties.manager.get_current_path().clone());
                             }
                             self.properties.mode = AppMode::Normal;
                         }
@@ -205,6 +205,12 @@ impl<'a> App<'a> {
             },
             _ => {}
         }
+        self.reload_dir();
+    }
+
+    fn reload_dir(&mut self) {
+        self.change_dir(self.properties.manager.get_current_path().clone());
+        self.properties.manager.after_reload();
     }
 
     fn handle_editkey_code(&mut self, key_event: &KeyEvent, action: EditAction) {
@@ -219,17 +225,15 @@ impl<'a> App<'a> {
                     EditAction::Create => {
                         let new_item = self.properties.edit_input.get_value();
                         _ = self.properties.manager.create_fsitem(&new_item);
-                        self.change_dir(self.properties.manager.get_current_path().clone());
                     }
                     EditAction::Rename => {
                         if let (Some(path), _) = &self.properties.cursor {
                             let source = path.clone();
                             let dest = self.properties.edit_input.get_value();
                             _ = self.properties.manager.rename_fsitem(source, dest);
-                            self.change_dir(self.properties.manager.get_current_path().clone());
                         }
                     }
-                    EditAction::Move => {
+                    EditAction::Move | EditAction::Copy => {
                         if let (Some(path), _) = &self.properties.cursor {
                             let source = path.clone();
                             let mut dest = PathBuf::from(self.properties.edit_input.get_value());
@@ -240,19 +244,20 @@ impl<'a> App<'a> {
                                 dest = val;
                             }
 
-                            let res =
-                                self.properties
-                                    .manager
-                                    .move_fsitem(source, dest, MoveOption::Move);
-                            if res.is_err() {
-                                println!("{}", res.err().unwrap());
-                            }
-                            self.change_dir(self.properties.manager.get_current_path().clone());
+                            let mov_option = if action == EditAction::Move {
+                                MoveOption::Move
+                            } else {
+                                MoveOption::Copy
+                            };
+
+                            _ = self
+                                .properties
+                                .manager
+                                .move_fsitem(source, dest, mov_option);
                         }
                     }
                     _ => {}
                 }
-
                 //Maybe i could implement jump to item here
                 self.properties.edit_input.clear();
                 self.properties.mode = AppMode::Normal;

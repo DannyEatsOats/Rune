@@ -29,6 +29,7 @@ pub enum EditAction {
     Delete,
     Rename,
     Move,
+    Copy,
 }
 
 impl Display for AppMode {

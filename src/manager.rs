@@ -140,6 +140,10 @@ impl Manager {
         &self.current
     }
 
+    pub fn after_reload(&mut self) {
+        self.pathstack.pop();
+    }
+
     /// Returns the directory currently opened in the manager
     pub fn read_dir(&self, path: &PathBuf, option: OpenOption) -> std::io::Result<Vec<PathBuf>> {
         let mut items = Vec::new();
