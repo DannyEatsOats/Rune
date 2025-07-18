@@ -38,7 +38,7 @@ It is designed with an occult minimalism: powerful, fast, and tailored for those
 ## 🜚 ✦ Disclaimer ✦ 🜚
 
 ☉ **Rune is a personal project** built to learn Rust and its capabilities.  
-☽ It is **tailored to warlock's (me) daily terminal rituals**, rather than general user friendliness.  
+☽ It is **tailored to the warlock's (my) daily terminal rituals**, rather than general user friendliness.  
 ♄ Use it **at your own risk**, for within its runes lie both power and chaos.
 
 ---
