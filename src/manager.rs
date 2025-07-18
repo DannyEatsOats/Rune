@@ -36,6 +36,11 @@ pub enum OpenOption {
     Preview,
 }
 
+pub enum MoveOption {
+    Move,
+    Copy,
+}
+
 struct Flags {
     pub is_searching: Arc<Mutex<bool>>,
     pub is_indexing: Arc<Mutex<bool>>,
@@ -387,15 +392,90 @@ impl Manager {
         temp.pop();
         temp.push(dest);
 
-        /*
-                if temp.exists() {
-                    return Err(String::from("Item with same name already exists"));
-                }
-        */
+        if temp.exists() {
+            return Err(String::from("Item with same name already exists"));
+        }
 
         match fs::rename(source, temp) {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),
+        }
+    }
+
+    pub fn move_fsitem(
+        &self,
+        source: PathBuf,
+        dest: PathBuf,
+        option: MoveOption,
+    ) -> Result<(), String> {
+        if !source.exists() {
+            return Err(String::from("Source doesn't exist"));
+        }
+
+        let mut dest = dest.clone();
+        dest.push(source.file_name().unwrap());
+
+        match option {
+            MoveOption::Move => match fs::rename(&source, &dest) {
+                Ok(_) => Ok(()),
+                Err(_) => self.move_crossfs(source, dest, &option),
+            },
+            MoveOption::Copy => self.move_crossfs(source, dest, &option),
+        }
+    }
+
+    /// Moves a file or folder to a different filesystem or mount point.
+    /// It's basically a helper function for move_fsitem()
+    fn move_crossfs(
+        &self,
+        source: PathBuf,
+        dest: PathBuf,
+        option: &MoveOption,
+    ) -> Result<(), String> {
+        //println!("Different mount point!: {source:?} {dest:?}");
+        // [FILE] Copies 'src' to 'dest' then deletes 'src'
+        if source.is_file() {
+            match fs::copy(&source, dest) {
+                Ok(_) => (),
+                Err(e) => return Err(e.to_string()),
+            }
+
+            match option {
+                MoveOption::Move => match fs::remove_file(&source) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(e.to_string()),
+                },
+                MoveOption::Copy => Ok(()),
+            }
+        }
+        // [DIR]
+        else if source.is_dir() {
+            match fs::create_dir_all(&dest) {
+                Ok(_) => {
+                    if let Ok(entries) = fs::read_dir(&source) {
+                        for entry in entries.flatten() {
+                            let fname = entry.file_name();
+                            let dest_entry = dest.join(fname);
+                            self.move_crossfs(entry.path(), dest_entry, option)?
+                        }
+
+                        match option {
+                            MoveOption::Move => {
+                                if let Err(e) = fs::remove_dir_all(source) {
+                                    return Err(e.to_string());
+                                }
+                            }
+                            MoveOption::Copy => (),
+                        }
+                        Ok(())
+                    } else {
+                        return Err(format!("Can't open dir: {}", dest.to_string_lossy()));
+                    }
+                }
+                Err(e) => Err(e.to_string()),
+            }
+        } else {
+            Err(String::from("Permission error"))
         }
     }
 

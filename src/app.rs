@@ -225,9 +225,27 @@ impl<'a> App<'a> {
                         if let (Some(path), _) = &self.properties.cursor {
                             let source = path.clone();
                             let dest = self.properties.edit_input.get_value();
-                            let res = self.properties.manager.rename_fsitem(source, dest);
+                            _ = self.properties.manager.rename_fsitem(source, dest);
+                            self.change_dir(self.properties.manager.get_current_path().clone());
+                        }
+                    }
+                    EditAction::Move => {
+                        if let (Some(path), _) = &self.properties.cursor {
+                            let source = path.clone();
+                            let mut dest = PathBuf::from(self.properties.edit_input.get_value());
+
+                            if !dest.exists() {
+                                let mut val = self.properties.get_current_path().clone();
+                                val.push(dest);
+                                dest = val;
+                            }
+
+                            let res =
+                                self.properties
+                                    .manager
+                                    .move_fsitem(source, dest, MoveOption::Move);
                             if res.is_err() {
-                                print!("{}", res.err().unwrap())
+                                println!("{}", res.err().unwrap());
                             }
                             self.change_dir(self.properties.manager.get_current_path().clone());
                         }

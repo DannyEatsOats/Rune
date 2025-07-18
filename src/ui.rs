@@ -440,16 +440,19 @@ impl<'a> UI<'a> {
         if let AppMode::Edit(x) = &mode {
             match x {
                 EditAction::Create => {
-                    input_text.push_str("Create file: ");
+                    input_text.push_str("[Confirm] Create file or folder(/): ");
                 }
                 EditAction::Rename => {
                     if let (Some(path), _) = &app_props.cursor {
                         let name = path.file_name().unwrap().to_string_lossy();
-                        input_text.push_str(&format!("Rename {} to: ", name));
+                        input_text.push_str(&format!("[Confirm] Rename {} to: ", name));
                     }
                 }
                 EditAction::Move => {
-                    input_text.push_str("Move x to: ");
+                    if let (Some(path), _) = &app_props.cursor {
+                        let name = path.file_name().unwrap().to_string_lossy();
+                        input_text.push_str(&format!("[Confirm] Move {} to: ", name));
+                    }
                 }
                 EditAction::Delete => {
                     input_text.push_str("[Confirm] to delete: ");
