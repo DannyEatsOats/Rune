@@ -74,7 +74,7 @@ impl Theme {
 
         themes.push(Theme::new(
             "Rosé-Pine",
-            Color::Rgb(156, 207, 216), //ForeGround
+            Color::Rgb(234, 154, 151), //Highlight
             Color::Rgb(53, 33, 54),    //BackGround
             Color::Rgb(224, 222, 244), //MainText
             Color::Rgb(196, 167, 231), //SubText
@@ -82,7 +82,7 @@ impl Theme {
             Color::Rgb(110, 106, 134), //Shade1
             Color::Rgb(68, 65, 90),    //Shade2
             Color::Rgb(88, 91, 112),   //Shade3
-            Color::Rgb(234, 154, 151), //Highlight
+            Color::Rgb(156, 207, 216), //ForeGround
         ));
 
         themes
