@@ -1,6 +1,6 @@
 use tokio;
 
-use gooner::app::*;
+use rune::app::*;
 use std::io;
 
 #[tokio::main]
