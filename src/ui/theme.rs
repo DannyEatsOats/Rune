@@ -48,29 +48,43 @@ impl Theme {
 
         themes.push(Theme::new(
             "Nord",
-            Color::Rgb(136, 192, 208),
-            Color::Rgb(46, 52, 64),
-            Color::Rgb(229, 233, 240),
-            Color::Rgb(143, 188, 187),
-            Color::Rgb(129, 161, 193),
-            Color::Rgb(59, 66, 82),
-            Color::Rgb(67, 76, 94),
-            Color::Rgb(76, 86, 103),
-            Color::Rgb(180, 142, 173),
+            Color::Rgb(136, 192, 208), //ForeGround
+            Color::Rgb(46, 52, 64),    //BackGround
+            Color::Rgb(229, 233, 240), //MainText
+            Color::Rgb(143, 188, 187), //SubText
+            Color::Rgb(129, 161, 193), //Highlight
+            Color::Rgb(59, 66, 82),    //Shade1
+            Color::Rgb(67, 76, 94),    //Shade2
+            Color::Rgb(76, 86, 103),   //Shade3
+            Color::Rgb(180, 142, 173), //Process
         ));
 
         themes.push(Theme::new(
             "Catppuccin",
-            Color::Rgb(180, 190, 254),
-            Color::Rgb(30, 30, 46),
-            Color::Rgb(137, 180, 250),
-            Color::Rgb(203, 166, 147),
-            Color::Rgb(250, 179, 135),
-            Color::Rgb(46, 50, 68),
-            Color::Rgb(69, 71, 90),
-            Color::Rgb(88, 91, 112),
-            Color::Rgb(243, 139, 168),
+            Color::Rgb(180, 190, 254), //ForeGround
+            Color::Rgb(30, 30, 46),    //BackGround
+            Color::Rgb(137, 180, 250), //MainText
+            Color::Rgb(203, 166, 147), //SubText
+            Color::Rgb(250, 179, 135), //Highlight
+            Color::Rgb(46, 50, 68),    //Shade1
+            Color::Rgb(69, 71, 90),    //Shade2
+            Color::Rgb(88, 91, 112),   //Shade3
+            Color::Rgb(243, 139, 168), //Process
         ));
+
+        themes.push(Theme::new(
+            "Rosé-Pine",
+            Color::Rgb(156, 207, 216), //ForeGround
+            Color::Rgb(53, 33, 54),    //BackGround
+            Color::Rgb(224, 222, 244), //MainText
+            Color::Rgb(196, 167, 231), //SubText
+            Color::Rgb(235, 111, 146), //Process
+            Color::Rgb(110, 106, 134), //Shade1
+            Color::Rgb(68, 65, 90),    //Shade2
+            Color::Rgb(88, 91, 112),   //Shade3
+            Color::Rgb(234, 154, 151), //Highlight
+        ));
+
         themes
     }
 
