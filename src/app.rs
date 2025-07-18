@@ -213,6 +213,7 @@ impl<'a> App<'a> {
             KeyCode::Esc => {
                 self.properties.edit_input.clear();
                 self.properties.mode = AppMode::Normal;
+                return;
             }
             _ => {}
         }
