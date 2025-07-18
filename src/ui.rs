@@ -115,6 +115,7 @@ r^`´[>``•J
 //data)
 pub struct UI<'a> {
     list: Option<Vec<Line<'a>>>,
+    themes: Option<Vec<Line<'a>>>,
     width: u16,
     height: u16,
     symbol: String,
@@ -124,11 +125,13 @@ impl<'a> UI<'a> {
     pub fn new(app_props: &AppProperties) -> Self {
         let mut ui = Self {
             list: None,
+            themes: None,
             width: 0,
             height: 0,
             symbol: String::from(SYMBOL),
         };
         ui.set_main_items(app_props);
+        ui.set_theme_items(app_props);
 
         ui
     }
@@ -141,6 +144,10 @@ impl<'a> UI<'a> {
 
         //GENERATE BACKGOUND (atm i dont want a background cuz of hyprland)
         //generate_background(app, frame);
+        if (app_props.mode == AppMode::Theme) {
+            self.generate_theme_view(app_props, frame, chunks[1]);
+            return;
+        }
 
         self.generate_statusbar(app_props, frame, footer[0]);
         self.generate_main_view(app_props, frame, chunks[1]);
@@ -425,7 +432,7 @@ impl<'a> UI<'a> {
                 mode.to_string(),
                 Style::default().fg(app_props.get_theme().get_ht()),
             ),
-            AppMode::Compare => Span::styled(
+            AppMode::Compare | AppMode::Theme => Span::styled(
                 mode.to_string(),
                 Style::default().fg(app_props.get_theme().get_ht()),
             ),
@@ -595,5 +602,42 @@ impl<'a> UI<'a> {
                     frame.render_widget(p, area);
                 }
         */
+    }
+
+    fn generate_theme_view(
+        &mut self,
+        app_props: &mut AppProperties,
+        frame: &mut Frame,
+        area: Rect,
+    ) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(format!("Theme Picker"))
+            .title_alignment(Alignment::Center)
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .fg(app_props.get_theme().get_fg());
+
+        let list = List::new(self.themes.clone().unwrap())
+            .style(Style::default().fg(app_props.get_theme().get_fg()))
+            .highlight_style(Style::default().fg(app_props.get_theme().get_ht()))
+            .scroll_padding(5)
+            .highlight_symbol(">> ")
+            .block(block);
+
+        frame.render_stateful_widget(list.clone(), area, app_props.get_tl_state());
+    }
+
+    pub fn set_theme_items(&mut self, app_props: &AppProperties) {
+        let items = app_props.get_themes();
+        //Maybe this could be somehow in a different function or stored as state
+        let mut list: Vec<Line> = Vec::new();
+
+        items.iter().for_each(|i| {
+            let name = i.get_name().to_string();
+            let line = Line::from(Span::from(name));
+            list.push(Line::from(line));
+        });
+
+        self.themes = Some(list);
     }
 }

@@ -21,6 +21,7 @@ pub enum AppMode {
     Search,
     Navigate,
     Compare,
+    Theme,
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -40,6 +41,7 @@ impl Display for AppMode {
             AppMode::Search => write!(f, "Search"),
             AppMode::Navigate => write!(f, "Navigate"),
             AppMode::Compare => write!(f, "Compare"),
+            AppMode::Theme => write!(f, "Theme"),
         }
     }
 }
@@ -52,6 +54,7 @@ pub struct AppProperties {
     pub themes: Vec<theme::Theme>,
     pub current_theme: usize,
     pub main_list_state: ListState,
+    pub theme_list_state: ListState,
     pub search_input: input::Input,
     pub nav_input: input::Input,
     pub edit_input: input::Input,
@@ -80,14 +83,18 @@ impl AppProperties {
             themes: Vec::new(),
             current_theme: 1,
             main_list_state: ListState::default(),
+            theme_list_state: ListState::default(),
             search_input: input::Input::new(),
             nav_input: input::Input::new(),
             edit_input: input::Input::new(),
             cursor,
         };
         props.main_list_state.select(Some(0));
+        props.theme_list_state.select(Some(1));
         props.themes = theme::Theme::init_themes();
         props.search_input.set_color(props.get_theme().get_fg());
+        props.nav_input.set_color(props.get_theme().get_fg());
+        props.edit_input.set_color(props.get_theme().get_fg());
 
         props
     }
@@ -104,8 +111,16 @@ impl AppProperties {
         &self.themes[self.current_theme]
     }
 
+    pub fn get_themes(&self) -> &Vec<theme::Theme> {
+        &self.themes
+    }
+
     pub fn get_ml_state(&mut self) -> &mut ListState {
         &mut self.main_list_state
+    }
+
+    pub fn get_tl_state(&mut self) -> &mut ListState {
+        &mut self.theme_list_state
     }
 
     pub fn get_mode(&self) -> &AppMode {

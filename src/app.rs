@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::{io, thread};
 
 use crossterm::event::*;
+use devicons::Theme;
 use ratatui::{DefaultTerminal, widgets::*};
 
 use crate::app_properties::{AppMode, AppProperties, EditAction};
@@ -60,12 +61,17 @@ impl<'a> App<'a> {
         } else if self.properties.mode == AppMode::Navigate && key_event.kind == KeyEventKind::Press
         {
             self.handle_nav_mode(key_event);
+        } else if self.properties.mode == AppMode::Theme && key_event.kind == KeyEventKind::Press {
+            self.handle_theme_mode(key_event);
         } else if key_event.kind == KeyEventKind::Press {
             self.handle_edit_mode(key_event);
         }
 
         Ok(())
     }
+
+    //TODO: optimization, always save current directory (properties.items) size, so you don't need
+    //to borrow mutex lock
 
     /// Handles normal mode keyevents, modifiers
     pub fn handle_normal_mode(&mut self, key_event: &KeyEvent) {
@@ -135,6 +141,41 @@ impl<'a> App<'a> {
             KeyCode::Char('r') => self.properties.mode = AppMode::Edit(EditAction::Rename),
             KeyCode::Char('m') => self.properties.mode = AppMode::Edit(EditAction::Move),
             KeyCode::Char('c') => self.properties.mode = AppMode::Edit(EditAction::Copy),
+            KeyCode::Char('t') => self.properties.mode = AppMode::Theme,
+            _ => {}
+        }
+    }
+
+    pub fn handle_theme_mode(&mut self, key_event: &KeyEvent) {
+        match key_event.code {
+            KeyCode::Down | KeyCode::Char('j') => {
+                if let Some(selected) = self.properties.theme_list_state.selected() {
+                    let next = (selected + 1).min(self.properties.themes.len().saturating_sub(1));
+                    self.properties.theme_list_state.select(Some(next));
+                    self.properties.current_theme = next;
+                }
+            }
+            KeyCode::Up | KeyCode::Char('k') => {
+                if let Some(selected) = self.properties.theme_list_state.selected() {
+                    let prev = selected.saturating_sub(1);
+                    self.properties.theme_list_state.select(Some(prev));
+                    self.properties.current_theme = prev;
+                }
+            }
+            KeyCode::Enter
+            | KeyCode::Char('l')
+            | KeyCode::Char('q')
+            | KeyCode::Esc
+            | KeyCode::Char('h') => {
+                if let Some(selected) = self.properties.theme_list_state.selected() {
+                    if self.properties.themes.get(selected).is_none() {
+                        return;
+                    }
+                    self.properties.current_theme = selected;
+                    self.properties.mode = AppMode::Normal;
+                    self.reload_dir();
+                }
+            }
             _ => {}
         }
     }
