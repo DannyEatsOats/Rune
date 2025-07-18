@@ -243,7 +243,7 @@ impl<'a> UI<'a> {
             frame.render_stateful_widget(list.clone(), areas[1], app_props.get_ml_state());
         } else {
             let empty_text = if app_props.manager.is_searching() {
-                Paragraph::new("Searching...")
+                Paragraph::new("Pondering...")
                     .style(Style::default().fg(app_props.get_theme().get_pr()))
                     .centered()
                     .block(block)
@@ -266,7 +266,7 @@ impl<'a> UI<'a> {
     ) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(String::from(" Search "))
+            .title(String::from(" Ponder the Orb "))
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
 
@@ -289,7 +289,7 @@ impl<'a> UI<'a> {
     ) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(String::from(" Change Directory "))
+            .title(String::from(" Teleport to Realm "))
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
 
@@ -308,13 +308,13 @@ impl<'a> UI<'a> {
     fn generate_preview(&mut self, app_props: &mut AppProperties, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(format!(" Preview ",))
+            .title(format!(" Revelation ",))
             .title_alignment(ratatui::layout::Alignment::Center)
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
 
         if let (None, _) = &app_props.cursor {
-            let empty_text = Paragraph::new("No Preview Available :(")
+            let empty_text = Paragraph::new("Nothing to reveal :(")
                 .style(Style::default().fg(app_props.get_theme().get_pr()))
                 .centered()
                 .block(block);
@@ -381,7 +381,7 @@ impl<'a> UI<'a> {
             frame.render_widget(block, area);
             return;
         }
-        let empty_text = Paragraph::new("No preview available :(")
+        let empty_text = Paragraph::new("Nothing to reveal :(")
             .style(Style::default().fg(app_props.get_theme().get_pr()))
             .centered()
             .block(block);
@@ -524,13 +524,13 @@ impl<'a> UI<'a> {
             if !text.is_empty() {
                 text.push_str(", ");
             }
-            text.push_str("Searching");
+            text.push_str("Pondering...");
         }
         if app_props.manager.is_loading() {
             if !text.is_empty() {
                 text.push_str(", ");
             }
-            text.push_str("Loading");
+            text.push_str("Channeling");
         }
 
         Line::from(text)
@@ -612,7 +612,7 @@ impl<'a> UI<'a> {
     ) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .title(format!("Theme Picker"))
+            .title(format!(" Conjure a Spell "))
             .title_alignment(Alignment::Center)
             .style(Style::default().fg(app_props.get_theme().get_fg()))
             .fg(app_props.get_theme().get_fg());
