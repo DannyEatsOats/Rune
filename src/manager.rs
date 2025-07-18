@@ -2,7 +2,8 @@ use core::{fmt, time};
 use std::collections::{HashMap, HashSet};
 use std::env::vars;
 use std::error::Error;
-use std::io::{BufRead, Read};
+use std::fs::OpenOptions;
+use std::io::{BufRead, Read, Write};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime};
@@ -313,6 +314,14 @@ impl Manager {
             return Ok(());
         }
 
+        if path.to_string_lossy().contains("/snap") {
+            return Ok(());
+        }
+
+        if path.to_string_lossy().contains("state/nvim") {
+            return Ok(());
+        }
+
         // Temporary fix, for huge searches
         if items.lock().unwrap().len() > 2000 {
             return Ok(());
@@ -320,30 +329,34 @@ impl Manager {
 
         let content: Vec<_> = fs::read_dir(path)?.filter_map(Result::ok).collect();
         content.par_iter().for_each(|item| {
-            //IT WOULD BE BETTER TO ACCUIRE THE LOCK HERE THEN DROP IT
             let path = item.path();
+
             if let Some(name) = path.file_name() {
                 let term = term.to_lowercase();
+                let mut items_lock = items.lock().unwrap();
                 if name.to_string_lossy().to_lowercase().contains(&term)
-                    && !items.lock().unwrap().contains(&path)
+                    && !items_lock.contains(&path)
                 {
-                    items.lock().unwrap().push(path.clone());
-                    //BUILD PATH
+                    if name.to_string_lossy().contains("titkos") {
+                        let mut file = OpenOptions::new()
+                            .create(true) // create if it doesn't exist
+                            .append(true) // append to the file
+                            .open("output.txt")
+                            .unwrap();
+
+                        writeln!(file, "{}", path.to_string_lossy()).unwrap();
+                    }
+                    items_lock.push(path.clone());
                 }
             }
+
             if path.is_dir() {
                 let items = Arc::clone(&items);
-                Manager::fallback_recursion(
-                    term,
-                    path,
-                    items,
-                    Arc::clone(&is_searching),
-                    delta_time,
-                )
-                .unwrap_or(());
+                let is_searching = Arc::clone(&is_searching);
+                Manager::fallback_recursion(term, path, items, is_searching, delta_time)
+                    .unwrap_or(());
             }
         });
-
         Ok(())
     }
 
