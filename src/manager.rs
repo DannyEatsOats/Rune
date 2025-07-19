@@ -337,17 +337,9 @@ impl Manager {
                 if name.to_string_lossy().to_lowercase().contains(&term)
                     && !items_lock.contains(&path)
                 {
-                    if name.to_string_lossy().contains("titkos") {
-                        let mut file = OpenOptions::new()
-                            .create(true) // create if it doesn't exist
-                            .append(true) // append to the file
-                            .open("output.txt")
-                            .unwrap();
-
-                        writeln!(file, "{}", path.to_string_lossy()).unwrap();
-                    }
                     items_lock.push(path.clone());
                 }
+                drop(items_lock);
             }
 
             if path.is_dir() {

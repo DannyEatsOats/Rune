@@ -124,7 +124,12 @@ impl<'a> App<'a> {
                         .get(selected)
                         .unwrap()
                         .clone();
-                    self.change_dir(new_path);
+
+                    if new_path.is_dir() {
+                        self.change_dir(new_path);
+                    } else if new_path.is_file() {
+                        _ = open::that_detached(new_path);
+                    }
                 }
             }
             KeyCode::Backspace | KeyCode::Char('h') => {
